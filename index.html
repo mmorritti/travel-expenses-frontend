@@ -1,0 +1,59 @@
+<!doctype html>
+<html lang="it">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Travel Expenses - Viaggi</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <!-- SOLO Tailwind, niente Alpine -->
+    <script src="https://cdn.tailwindcss.com"></script>
+  </head>
+
+  <body class="bg-gray-100 min-h-screen">
+    <div id="app" class="min-h-screen flex flex-col">
+      <!-- HEADER AZZURRO -->
+      <header
+        class="bg-sky-300 px-6 pt-10 pb-6 rounded-b-3xl shadow-sm flex justify-center"
+      >
+        <h1 class="text-3xl font-bold text-black tracking-wide">
+          VIAGGI
+        </h1>
+      </header>
+
+      <!-- CONTENUTO -->
+      <main class="flex-1 pt-4 pb-24">
+        <!-- Messaggio di caricamento -->
+        <div
+          id="loading"
+          class="text-center text-gray-500 mt-8"
+        >
+          Caricamento in corso...
+        </div>
+
+        <!-- Messaggio nessun viaggio -->
+        <div
+          id="empty-state"
+          class="hidden text-center text-gray-500 mt-8"
+        >
+          Nessun viaggio presente.<br />
+          Tocca <span class="font-bold">+</span> per aggiungerne uno.
+        </div>
+
+        <!-- Lista viaggi -->
+        <div id="trips-list"></div>
+      </main>
+
+      <!-- BOTTONE FLOTANTE + -->
+      <button
+        id="add-trip-btn"
+        class="fixed bottom-6 left-1/2 -translate-x-1/2 w-16 h-16 rounded-full bg-sky-300 text-white text-3xl flex items-center justify-center shadow-xl"
+        aria-label="Aggiungi viaggio"
+      >
+        +
+      </button>
+    </div>
+
+    <!-- Il nostro JS -->
+    <script type="module" src="src/main.js"></script>
+  </body>
+</html>

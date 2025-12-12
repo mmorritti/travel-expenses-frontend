@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="it">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Spese viaggio</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <!-- stesso CSS che usi in index -->
+    <link rel="stylesheet" href="/src/style.css" />
+  </head>
+
+  <body class="page-expenses">
+    <!-- barra azzurra come la pagina iniziale -->
+    <header class="exp-header">
+      <button id="back-btn" class="exp-back-btn">←</button>
+      <div class="exp-header-text">
+        <h1 id="travel-name" class="exp-title">Viaggio</h1>
+        <p id="travel-dates" class="exp-dates"></p>
+      </div>
+    </header>
+
+    <!-- contenuto centrale -->
+    <main id="tab-content" class="exp-main">
+      <!-- qui verranno iniettate le schede -->
+    </main>
+
+    <!-- barra in basso con le 4 schede -->
+    <nav class="exp-bottom-nav">
+      <button class="exp-tab-btn exp-tab-btn-active" data-tab="list">
+        💸 Spese
+      </button>
+      <button class="exp-tab-btn" data-tab="add">
+        ➕ Aggiungi
+      </button>
+      <button class="exp-tab-btn" data-tab="chart">
+        📊 Grafico
+      </button>
+      <button class="exp-tab-btn" data-tab="fx">
+        💱 Cambio
+      </button>
+    </nav>
+
+    <script type="module" src="/src/travel-expenses.js"></script>
+  </body>
+</html>
