@@ -1,59 +1,40 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="it">
   <head>
     <meta charset="UTF-8" />
-    <title>Travel Expenses - Viaggi</title>
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
-
-    <!-- SOLO Tailwind, niente Alpine -->
+    <title>I Miei Viaggi</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+    
     <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="/src/style.css" />
   </head>
 
-  <body class="bg-gray-100 min-h-screen">
-    <div id="app" class="min-h-screen flex flex-col">
-      <!-- HEADER AZZURRO -->
-      <header
-        class="bg-sky-300 px-6 pt-10 pb-6 rounded-b-3xl shadow-sm flex justify-center"
-      >
-        <h1 class="text-3xl font-bold text-black tracking-wide">
-          VIAGGI
+  <body class="bg-gray-50 min-h-screen flex flex-col font-sans">
+    
+    <header class="bg-sky-300 pt-8 pb-6 px-6 rounded-b-[2rem] shadow-sm z-20 flex-shrink-0 relative">
+      <div class="text-center">
+        <h1 class="text-2xl font-bold text-slate-900 leading-tight">
+          I Miei Viaggi
         </h1>
-      </header>
+        <p class="text-sm font-medium text-slate-700 opacity-80 mt-1">
+          Monitora le tue spese
+        </p>
+      </div>
+    </header>
 
-      <!-- CONTENUTO -->
-      <main class="flex-1 pt-4 pb-24">
-        <!-- Messaggio di caricamento -->
-        <div
-          id="loading"
-          class="text-center text-gray-500 mt-8"
-        >
-          Caricamento in corso...
+    <main class="flex-1 p-5 overflow-y-auto pb-24">
+      <div id="travels-list" class="flex flex-col gap-4">
+        <div class="animate-pulse flex flex-col gap-4">
+            <div class="h-24 bg-gray-200 rounded-xl"></div>
+            <div class="h-24 bg-gray-200 rounded-xl"></div>
         </div>
+      </div>
+    </main>
 
-        <!-- Messaggio nessun viaggio -->
-        <div
-          id="empty-state"
-          class="hidden text-center text-gray-500 mt-8"
-        >
-          Nessun viaggio presente.<br />
-          Tocca <span class="font-bold">+</span> per aggiungerne uno.
-        </div>
+   <a href="/new-travel.html" class="fixed bottom-6 right-6 bg-sky-500 hover:bg-sky-600 hover:no-underline text-white w-14 h-14 rounded-full shadow-lg shadow-sky-300 flex items-center justify-center text-3xl font-bold transition transform active:scale-90 z-30">
+      +
+    </a>
 
-        <!-- Lista viaggi -->
-        <div id="trips-list"></div>
-      </main>
-
-      <!-- BOTTONE FLOTANTE + -->
-      <button
-        id="add-trip-btn"
-        class="fixed bottom-6 left-1/2 -translate-x-1/2 w-16 h-16 rounded-full bg-sky-300 text-white text-3xl flex items-center justify-center shadow-xl"
-        aria-label="Aggiungi viaggio"
-      >
-        +
-      </button>
-    </div>
-
-    <!-- Il nostro JS -->
-    <script type="module" src="src/main.js"></script>
+    <script type="module" src="/src/main.js"></script>
   </body>
 </html>

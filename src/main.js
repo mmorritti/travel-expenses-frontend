@@ -1,239 +1,193 @@
 import { API_BASE_URL } from "./config.js";
 
-const API_URL = `${API_BASE_URL}/Travels/summaries`;
+document.addEventListener("DOMContentLoaded", () => {
+  const travelList = document.getElementById('travels-list');
+  
+  if (!travelList) {
+    console.error("ERRORE: Elemento 'travels-list' non trovato.");
+    return;
+  }
 
-document.addEventListener('DOMContentLoaded', () => {
-  const loadingEl = document.getElementById('loading');
-  const emptyStateEl = document.getElementById('empty-state');
-  const tripsListEl = document.getElementById('trips-list');
-  const addTripBtn = document.getElementById('add-trip-btn');
+  loadTravels();
 
-  // evento click sul +
-  addTripBtn.addEventListener('click', () => {
-    window.location.href = '/new-travel.html';
-  });
-
-  // carica i viaggi all’avvio
-  loadTrips();
-
-  async function loadTrips() {
+  async function loadTravels() {
     try {
-      const response = await fetch(API_URL);
+      const response = await fetch(`${API_BASE_URL}/Travels/summaries`);
+      if (!response.ok) throw new Error(`Status: ${response.status}`);
 
-      if (!response.ok) {
-        throw new Error('Errore nella chiamata API');
-      }
+      const rawData = await response.json();
+      travelList.innerHTML = ''; 
 
-      const data = await response.json();
-
-      // tolgo il messaggio di loading
-      loadingEl.classList.add('hidden');
-
-      if (!data || data.length === 0) {
-        emptyStateEl.classList.remove('hidden');
+      if (!rawData || rawData.length === 0) {
+        travelList.innerHTML = `
+          <div class="text-center mt-10 opacity-60">
+            <span class="text-4xl block mb-2">🌍</span>
+            <p>Nessun viaggio trovato.</p>
+            <p class="text-sm">Usa il tasto + per aggiungerne uno.</p>
+          </div>`;
         return;
       }
 
-      // per ogni viaggio creo una card
-      data.forEach((trip) => {
-        const card = createTripCard(trip);
-        tripsListEl.appendChild(card);
+      // Normalizzazione dati
+      const travels = rawData.map(item => ({
+        id: item.travelId || item.TravelId || item.id || item.Id,
+        name: item.name || item.Name || "Senza Nome",
+        startDate: item.startDate || item.StartDate,
+        endDate: item.endDate || item.EndDate
+      }));
+
+      travels.forEach(travel => {
+        if (!travel.id) return;
+        const tripEl = createSwipeableCard(travel);
+        travelList.appendChild(tripEl);
       });
-    } catch (err) {
-      console.error(err);
-      loadingEl.textContent = 'Errore nel caricamento dei viaggi.';
+
+    } catch (error) {
+      console.error(error);
+      travelList.innerHTML = `<div class="text-red-500 text-center mt-5">Errore caricamento: ${error.message}</div>`;
     }
   }
 
-  function createTripCard(trip) {
-    const dateRange = formatDateRange(trip.startDate, trip.endDate);
-
-    const totalHomeText = formatTotal(
-      trip.totalInHomeCurrency,
-      trip.homeCurrencyCode
-    );
-
-    const totalTravelText = formatTotal(
-      trip.totalInTravelCurrency,
-      trip.travelCurrencyCode
-    );
-
-    // wrapper che gestisce sfondo rosso + card che scorre
+  function createSwipeableCard(travel) {
+    // 1. Wrapper
     const wrapper = document.createElement('div');
-    wrapper.className = 'relative overflow-hidden mb-3 px-4';
-    wrapper.dataset.travelId = trip.travelId; // id per la DELETE
-
-    wrapper.innerHTML = `
-      <!-- sfondo rosso con cestino -->
-      <div
-        class="absolute inset-y-0 left-4 right-4 bg-red-500 rounded-2xl flex items-center justify-start pl-6"
-        data-role="delete-bg"
-      >
-        <div class="flex items-center gap-2 text-white font-semibold text-sm">
-          🗑️ <span>Elimina</span>
-        </div>
-      </div>
-
-      <!-- card "vera" che può scorrere -->
-      <div
-        class="relative bg-white rounded-2xl shadow-md px-4 py-3 flex justify-between items-center transform transition-transform duration-200 trip-card-clickable"
-        data-role="card"
-        style="cursor: pointer;"
-      >
-        <div class="flex flex-col text-left">
-          <span class="text-lg font-bold">${trip.name}</span>
-          <span class="text-xs text-gray-500 mt-1">${dateRange}</span>
-        </div>
-        <div class="flex flex-col items-end text-right">
-          <span class="text-base font-bold">${totalHomeText}</span>
-          <span class="text-xs text-gray-500 mt-1">≈ ${totalTravelText}</span>
-        </div>
+    wrapper.className = "relative overflow-hidden mb-3 select-none"; 
+    
+    // 2. Sfondo Rosso
+    const deleteBg = document.createElement('div');
+    deleteBg.className = "absolute inset-0 bg-red-500 rounded-xl flex items-center justify-start pl-6 text-white font-bold opacity-0 transition-opacity duration-200";
+    deleteBg.innerHTML = `
+      <div class="flex items-center gap-2">
+        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-6 h-6"><path stroke-linecap="round" stroke-linejoin="round" d="M14.74 9l-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 01-2.244 2.077H8.084a2.25 2.25 0 01-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 00-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 013.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 00-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 00-7.5 0" /></svg>
+        Elimina
       </div>
     `;
 
-    const card = wrapper.querySelector('[data-role="card"]');
+    // 3. Card
+    const card = document.createElement('div');
+    card.className = "bg-white rounded-xl p-5 shadow-sm border border-gray-100 flex justify-between items-center relative z-10 bg-white cursor-pointer"; // Aggiunto cursor-pointer
+    
+    let dateStr = "--";
+    try {
+        const s = new Date(travel.startDate).toLocaleDateString("it-IT", { day: 'numeric', month: 'short' });
+        const e = new Date(travel.endDate).toLocaleDateString("it-IT", { day: 'numeric', month: 'short', year: '2-digit' });
+        dateStr = `${s} - ${e}`;
+    } catch(e){}
 
-    // 👉 swipe + click senza conflitto
-    attachSwipeToDelete(wrapper, trip.travelId, () => {
-      window.location.href = `/travel-expenses.html?travelId=${trip.travelId}`;
-    });
+    card.innerHTML = `
+      <div class="flex items-center gap-4 pointer-events-none">
+        <div class="w-12 h-12 rounded-full bg-sky-100 text-sky-600 flex items-center justify-center text-xl">✈️</div>
+        <div>
+          <h3 class="font-bold text-gray-800 text-lg leading-tight">${travel.name}</h3>
+          <p class="text-xs text-gray-500 font-medium mt-1">${dateStr}</p>
+        </div>
+      </div>
+      <div class="text-gray-300 pointer-events-none">
+        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor" class="w-5 h-5"><path stroke-linecap="round" stroke-linejoin="round" d="M8.25 4.5l7.5 7.5-7.5 7.5" /></svg>
+      </div>
+    `;
 
-    return wrapper;
-  }
-
-  // chiamata DELETE al backend
-  async function deleteTravel(travelId) {
-    const response = await fetch(`${API_BASE_URL}/Travels/${travelId}`, {
-      method: 'DELETE'
-    });
-
-    if (!response.ok) {
-      throw new Error("Errore durante l'eliminazione del viaggio");
-    }
-  }
-
-  /**
-   * swipe da sinistra verso destra con soglia di eliminazione
-   * + click che funziona solo se NON abbiamo trascinato
-   */
-  function attachSwipeToDelete(wrapper, travelId, onClick) {
-    const card = wrapper.querySelector('[data-role="card"]');
-    if (!card) return;
-
+    // --- LOGICA UNIFICATA MOUSE + TOUCH ---
     let startX = 0;
     let currentX = 0;
-    let dragging = false;
-    let moved = false; // se la card si è mossa, non consideriamo il click
+    let isDragging = false;
+    let isSwiped = false; 
 
-    const maxTranslate = 160; // quanto può “slittare” la card
-    const threshold = 120;    // oltre questo valore → tentativo di delete
-    const clickTolerance = 5; // pixel entro cui consideriamo "click" e non swipe
+    // Funzioni helper per gestire sia Mouse che Touch
+    const getX = (e) => e.type.includes('mouse') ? e.clientX : e.touches[0].clientX;
 
-    const onStart = (clientX) => {
-      dragging = true;
-      moved = false;
-      startX = clientX;
-      currentX = 0;
+    const startDrag = (e) => {
+      startX = getX(e);
+      isDragging = true;
+      isSwiped = false;
       card.style.transition = 'none';
     };
 
-    const onMove = (clientX) => {
-      if (!dragging) return;
-      const deltaX = clientX - startX;
+    const moveDrag = (e) => {
+      if (!isDragging) return;
+      
+      const x = getX(e);
+      const diff = x - startX;
 
-      if (Math.abs(deltaX) > clickTolerance) {
-        moved = true;
+      // Swipe solo verso destra
+      if (diff > 0) {
+        currentX = diff; // Salviamo la differenza
+        card.style.transform = `translateX(${diff}px)`;
+        
+        if(diff > 20) deleteBg.classList.remove('opacity-0');
+        if (diff > 5) isSwiped = true; // Soglia minima per considerare movimento
       }
-
-      // solo swipe da SINISTRA verso destra
-      if (deltaX <= 0) {
-        currentX = 0;
-        card.style.transform = 'translateX(0)';
-        return;
-      }
-
-      currentX = Math.min(deltaX, maxTranslate);
-      card.style.transform = `translateX(${currentX}px)`;
     };
 
-    const onEnd = async () => {
-      if (!dragging) return;
-      dragging = false;
-      card.style.transition = 'transform 0.2s ease-out';
-
-      if (currentX > threshold) {
-        const ok = window.confirm('Vuoi eliminare questo viaggio?');
-        if (!ok) {
-          card.style.transform = 'translateX(0)';
-          return;
-        }
-
-        try {
-          card.style.transform = 'translateX(100%)';
-          await deleteTravel(travelId);
-          wrapper.remove();
-        } catch (err) {
-          console.error(err);
-          alert("Errore nell'eliminazione del viaggio.");
-          card.style.transform = 'translateX(0)';
-        }
+    const endDrag = () => {
+      if (!isDragging) return;
+      isDragging = false;
+      card.style.transition = 'transform 0.3s ease-out';
+      
+      if (currentX > 150) {
+        // Conferma eliminazione
+        card.style.transform = `translateX(120%)`; // Vai fuori schermo
+        performDelete(travel.id, wrapper);
       } else {
-        card.style.transform = 'translateX(0)';
+        // Torna indietro
+        card.style.transform = `translateX(0)`;
+        setTimeout(() => deleteBg.classList.add('opacity-0'), 200);
       }
-
-      // dopo il rilascio, se non si è mosso abbastanza, il click normale funzionerà
+      currentX = 0;
     };
 
-    // click: parte solo se NON abbiamo fatto swipe
+    // Event Listeners (Touch)
+    card.addEventListener('touchstart', startDrag, {passive: true});
+    card.addEventListener('touchmove', moveDrag, {passive: true});
+    card.addEventListener('touchend', endDrag);
+
+    // Event Listeners (Mouse)
+    card.addEventListener('mousedown', startDrag);
+    window.addEventListener('mousemove', moveDrag); // Window per non perdere il drag se esci dalla card
+    window.addEventListener('mouseup', endDrag);
+
+    // Click (Navigazione)
     card.addEventListener('click', (e) => {
-      if (moved) {
-        // era uno swipe, non un click
+      // Se non stiamo trascinando e non abbiamo fatto uno swipe significativo
+      if (!isSwiped) {
+         window.location.href = `/travel-expenses.html?travelId=${travel.id}`;
+      }
+    });
+
+    wrapper.appendChild(deleteBg);
+    wrapper.appendChild(card);
+    return wrapper;
+  }
+
+  async function performDelete(id, element) {
+    // Piccolo ritardo per far vedere l'animazione swipe completa
+    await new Promise(r => setTimeout(r, 100));
+
+    if(!confirm("Vuoi davvero eliminare questo viaggio?")) {
+        loadTravels(); // Ricarica per resettare la posizione
         return;
+    }
+
+    try {
+      const res = await fetch(`${API_BASE_URL}/Travels/${id}`, { method: 'DELETE' });
+      if (res.ok) {
+        // Collasso animato
+        element.style.height = `${element.offsetHeight}px`;
+        element.style.transition = 'height 0.3s ease, margin 0.3s ease';
+        requestAnimationFrame(() => {
+            element.style.height = '0';
+            element.style.marginTop = '0';
+            element.style.marginBottom = '0';
+        });
+        setTimeout(() => element.remove(), 300);
+      } else {
+        alert("Errore durante l'eliminazione.");
+        loadTravels(); 
       }
-      if (typeof onClick === 'function') {
-        onClick();
-      }
-    });
-
-    // mouse events
-    card.addEventListener('mousedown', (e) => onStart(e.clientX));
-    window.addEventListener('mousemove', (e) => onMove(e.clientX));
-    window.addEventListener('mouseup', onEnd);
-
-    // touch events (mobile)
-    card.addEventListener('touchstart', (e) => {
-      const touch = e.touches[0];
-      if (touch) onStart(touch.clientX);
-    });
-
-    card.addEventListener('touchmove', (e) => {
-      const touch = e.touches[0];
-      if (touch) onMove(touch.clientX);
-    });
-
-    card.addEventListener('touchend', onEnd);
-  }
-
-  function formatDateRange(start, end) {
-    const s = new Date(start);
-    const e = new Date(end);
-
-    const optionsShort = { day: '2-digit', month: 'short' };
-    const optionsLong = {
-      day: '2-digit',
-      month: 'short',
-      year: 'numeric'
-    };
-
-    const sText = s.toLocaleDateString('it-IT', optionsShort);
-    const eText = e.toLocaleDateString('it-IT', optionsLong);
-
-    return `${sText} – ${eText}`;
-  }
-
-  function formatTotal(amount, currencyCode) {
-    const value = Number(amount ?? 0);
-    const code = currencyCode || '€';
-    return `${value.toFixed(2)} ${code}`;
+    } catch (err) {
+      console.error(err);
+      alert("Errore di connessione.");
+      loadTravels();
+    }
   }
 });

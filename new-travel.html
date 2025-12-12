@@ -2,43 +2,106 @@
 <html lang="it">
   <head>
     <meta charset="UTF-8" />
-    <title>Spese viaggio</title>
+    <title>Nuovo Viaggio</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <!-- stesso CSS che usi in index -->
+    <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="/src/style.css" />
   </head>
+  <body class="bg-gray-100 min-h-screen flex flex-col">
 
-  <body class="page-expenses">
-    <!-- barra azzurra come la pagina iniziale -->
-    <header class="exp-header">
-      <button id="back-btn" class="exp-back-btn">←</button>
-      <div class="exp-header-text">
-        <h1 id="travel-name" class="exp-title">Viaggio</h1>
-        <p id="travel-dates" class="exp-dates"></p>
-      </div>
+    <header class="bg-sky-300 px-4 py-4 shadow-sm flex items-center relative">
+      <button id="back-btn" class="text-2xl mr-4 focus:outline-none">←</button>
+      <h1 class="text-xl font-bold text-black tracking-wide">
+        Nuovo Viaggio
+      </h1>
     </header>
 
-    <!-- contenuto centrale -->
-    <main id="tab-content" class="exp-main">
-      <!-- qui verranno iniettate le schede -->
+    <main class="flex-1 p-6">
+      <form id="travel-form" class="flex flex-col gap-5 max-w-lg mx-auto">
+        
+        <div class="flex flex-col gap-1">
+          <label for="name" class="font-semibold text-gray-700">Nome Viaggio</label>
+          <input
+            type="text"
+            id="name"
+            class="border border-gray-300 rounded-lg p-3 focus:outline-none focus:border-sky-500"
+            placeholder="Es. Vacanza a Roma"
+            required
+          />
+        </div>
+
+        <div class="flex gap-4">
+          <div class="flex-1 flex flex-col gap-1">
+            <label for="startDate" class="font-semibold text-gray-700">Inizio</label>
+            <input
+              type="date"
+              id="startDate"
+              class="border border-gray-300 rounded-lg p-3 focus:outline-none focus:border-sky-500"
+              required
+            />
+          </div>
+          <div class="flex-1 flex flex-col gap-1">
+            <label for="endDate" class="font-semibold text-gray-700">Fine</label>
+            <input
+              type="date"
+              id="endDate"
+              class="border border-gray-300 rounded-lg p-3 focus:outline-none focus:border-sky-500"
+              required
+            />
+          </div>
+        </div>
+
+        <div class="flex flex-col gap-1">
+          <label for="countryCode" class="font-semibold text-gray-700">Codice Paese (2 lettere)</label>
+          <input
+            type="text"
+            id="countryCode"
+            maxlength="2"
+            class="border border-gray-300 rounded-lg p-3 uppercase focus:outline-none focus:border-sky-500"
+            placeholder="Es. IT"
+          />
+        </div>
+
+        <div class="relative flex flex-col gap-1">
+          <label class="font-semibold text-gray-700">Valuta Locale</label>
+          
+          <input
+            type="text"
+            id="travelCurrencySearch"
+            class="border border-gray-300 rounded-lg p-3 focus:outline-none focus:border-sky-500"
+            placeholder="Cerca valuta (es. USD, Dollaro...)"
+            autocomplete="off"
+          />
+          
+          <input type="hidden" id="travelCurrencyCode" />
+
+          <div
+            id="travelCurrencyDropdown"
+            class="absolute top-full left-0 right-0 mt-1 bg-white border border-gray-200 rounded-lg shadow-xl max-h-60 overflow-y-auto hidden z-50"
+          >
+            </div>
+        </div>
+
+        <div id="error-box" class="hidden bg-red-100 text-red-700 p-3 rounded-lg text-sm"></div>
+
+        <div class="flex gap-4 mt-4">
+          <button
+            type="button"
+            id="cancel-btn"
+            class="flex-1 py-3 rounded-full border border-gray-300 font-semibold text-gray-600 hover:bg-gray-50 transition"
+          >
+            Annulla
+          </button>
+          <button
+            type="submit"
+            class="flex-1 py-3 rounded-full bg-sky-400 text-white font-bold hover:bg-sky-500 shadow-md transition"
+          >
+            Crea Viaggio
+          </button>
+        </div>
+      </form>
     </main>
 
-    <!-- barra in basso con le 4 schede -->
-    <nav class="exp-bottom-nav">
-      <button class="exp-tab-btn exp-tab-btn-active" data-tab="list">
-        💸 Spese
-      </button>
-      <button class="exp-tab-btn" data-tab="add">
-        ➕ Aggiungi
-      </button>
-      <button class="exp-tab-btn" data-tab="chart">
-        📊 Grafico
-      </button>
-      <button class="exp-tab-btn" data-tab="fx">
-        💱 Cambio
-      </button>
-    </nav>
-
-    <script type="module" src="/src/travel-expenses.js"></script>
+    <script type="module" src="/src/new-travel.js"></script>
   </body>
 </html>

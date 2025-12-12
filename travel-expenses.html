@@ -2,38 +2,95 @@
 <html lang="it">
   <head>
     <meta charset="UTF-8" />
-    <title>Spese viaggio</title>
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <!-- stesso CSS che usi in index -->
+    <title>Dettaglio Viaggio</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+    <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="/src/style.css" />
+    <style>
+      /* Nasconde la scrollbar ma permette lo scroll */
+      .no-scrollbar::-webkit-scrollbar {
+        display: none;
+      }
+      .no-scrollbar {
+        -ms-overflow-style: none;
+        scrollbar-width: none;
+      }
+    </style>
   </head>
 
-  <body class="page-expenses">
-  <!-- HEADER AZZURRO, STILE COERENTE CON "VIAGGI" -->
-  <header class="exp-header">
-    <button id="back-btn" class="exp-back-btn">←</button>
-    <div class="exp-header-center">
-      <div id="travel-name" class="exp-title">Viaggio</div>
-      <div id="travel-dates" class="exp-dates"></div>
-    </div>
-  </header>
+  <body class="bg-gray-50 text-gray-800 min-h-screen flex flex-col font-sans">
+    
+    <header class="bg-sky-300 pt-8 pb-4 px-4 rounded-b-[2rem] shadow-sm z-20 flex-shrink-0 relative transition-all duration-300">
+      
+      <div class="relative flex items-center justify-between h-14">
+        
+        <button id="back-btn" class="relative z-30 w-10 h-10 flex items-center justify-center bg-white/30 backdrop-blur-sm rounded-full text-black hover:bg-white/50 transition flex-shrink-0">
+          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor" class="w-5 h-5">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M10.5 19.5L3 12m0 0l7.5-7.5M3 12h18" />
+          </svg>
+        </button>
 
-  <!-- CONTENUTO -->
-  <main id="tab-content" class="exp-main">
-    <!-- qui ci pensa travel-expenses.js -->
-  </main>
+        <div class="absolute inset-0 flex flex-col items-center justify-center pointer-events-none px-20 z-10">
+          <h1 id="travel-name" class="text-xl font-bold text-slate-900 leading-tight truncate w-full text-center">
+            Caricamento...
+          </h1>
+          <p id="travel-dates" class="text-xs font-semibold text-slate-700 opacity-70 mt-0.5 truncate w-full text-center">
+            --
+          </p>
+        </div>
 
-  <!-- BOTTOM NAV (riutilizzi le tue classi exp-tab-btn) -->
-  <nav class="exp-bottom-nav">
-    <button class="exp-tab-btn exp-tab-btn-active" data-tab="list">💸 Spese</button>
-    <button class="exp-tab-btn" data-tab="add">➕ Aggiungi</button>
-    <button class="exp-tab-btn" data-tab="chart">📊 Grafico</button>
-    <button class="exp-tab-btn" data-tab="fx">💱 Cambio</button>
-  </nav>
+        <div id="header-total-section" class="relative z-30 text-right flex flex-col items-end hidden animate-fade-in">
+          
+          <span class="text-xl font-black text-slate-900 leading-none bg-sky-300/80 backdrop-blur-sm rounded-lg px-1"> <span id="header-total-amount">0.00</span>
+             <span id="header-total-currency" class="text-xs font-bold opacity-80">???</span>
+          </span>
 
-  <script type="module" src="/src/travel-expenses.js"></script>
-</body>
+          <div id="header-converted-box" class="mt-1 hidden">
+            <span class="bg-white/40 px-2 py-0.5 rounded-md text-[10px] font-bold text-slate-800 backdrop-blur-sm shadow-sm whitespace-nowrap">
+              ≈ <span id="header-total-home">0.00</span> EUR
+            </span>
+          </div>
 
+        </div>
 
+      </div>
+    </header>
 
+    <main id="tab-content" class="flex-1 overflow-y-auto no-scrollbar p-5 pb-32">
+      </main>
+
+    <nav class="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-100 shadow-[0_-4px_20px_rgba(0,0,0,0.05)] px-6 py-3 flex justify-between items-center z-30 pb-safe">
+      
+      <button class="nav-btn group flex flex-col items-center gap-1 w-16" data-tab="list">
+        <div class="icon-container w-10 h-8 rounded-xl flex items-center justify-center transition-all duration-300 group-[.active]:bg-sky-100">
+          <span class="text-xl filter grayscale group-[.active]:grayscale-0 transition-all">💸</span>
+        </div>
+        <span class="text-[10px] font-semibold text-gray-400 group-[.active]:text-sky-600 transition-colors">Spese</span>
+      </button>
+
+      <button class="nav-btn group flex flex-col items-center gap-1 w-16" data-tab="add">
+        <div class="icon-container w-10 h-8 rounded-xl flex items-center justify-center transition-all duration-300 group-[.active]:bg-sky-100">
+          <span class="text-xl filter grayscale group-[.active]:grayscale-0 transition-all">➕</span>
+        </div>
+        <span class="text-[10px] font-semibold text-gray-400 group-[.active]:text-sky-600 transition-colors">Nuova</span>
+      </button>
+
+      <button class="nav-btn group flex flex-col items-center gap-1 w-16" data-tab="chart">
+        <div class="icon-container w-10 h-8 rounded-xl flex items-center justify-center transition-all duration-300 group-[.active]:bg-sky-100">
+          <span class="text-xl filter grayscale group-[.active]:grayscale-0 transition-all">📊</span>
+        </div>
+        <span class="text-[10px] font-semibold text-gray-400 group-[.active]:text-sky-600 transition-colors">Grafico</span>
+      </button>
+
+      <button class="nav-btn group flex flex-col items-center gap-1 w-16" data-tab="fx">
+        <div class="icon-container w-10 h-8 rounded-xl flex items-center justify-center transition-all duration-300 group-[.active]:bg-sky-100">
+          <span class="text-xl filter grayscale group-[.active]:grayscale-0 transition-all">💱</span>
+        </div>
+        <span class="text-[10px] font-semibold text-gray-400 group-[.active]:text-sky-600 transition-colors">Cambio</span>
+      </button>
+
+    </nav>
+
+    <script type="module" src="/src/travel-expenses.js"></script>
+  </body>
 </html>
