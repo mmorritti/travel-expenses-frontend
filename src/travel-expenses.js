@@ -140,7 +140,7 @@ document.addEventListener("DOMContentLoaded", () => {
     } catch (err) { console.error(err); }
   }
 
-  // --- 4. LISTA SPESE ---
+  // --- 4. LISTA SPESE (Ordinata per Data) ---
   async function renderExpensesList() {
     editingExpenseId = null;
     tabContentEl.innerHTML = `<div class="flex justify-center mt-10"><div class="animate-spin h-8 w-8 border-b-2 border-sky-500 rounded-full"></div></div>`;
@@ -152,22 +152,32 @@ document.addEventListener("DOMContentLoaded", () => {
       ]);
       const expenses = await expRes.json();
       const categories = await catRes.json();
+
       const categoryMap = {};
-      categories.forEach(c => categoryMap[c.categoryId || c.id] = c.icon || '🛒');
+      categories.forEach(c => {
+        const id = c.categoryId || c.id;
+        categoryMap[id] = c.icon || '🛒';
+      });
 
       tabContentEl.innerHTML = '';
       let totalNormalized = 0;
 
       if (expenses.length > 0) {
+        
+        // --- NUOVO: ORDINAMENTO PER DATA (Dal più recente al più vecchio) ---
+        expenses.sort((a, b) => new Date(b.expanseDate) - new Date(a.expanseDate));
+
         const listContainer = document.createElement("div");
         listContainer.className = "flex flex-col gap-3 pb-24"; 
 
         expenses.forEach((e) => {
+          const currentId = e.expanseId; 
           const amt = e.amount;
           const curr = e.currencyCode;
           let amountInMainCurrency = amt;
           let subText = "";
 
+          // Conversione
           if (curr === "EUR" && mainTravelCurrency !== "EUR" && currentExchangeRate) {
             amountInMainCurrency = amt / currentExchangeRate;
             subText = `≈ ${amountInMainCurrency.toFixed(2)} ${mainTravelCurrency}`;
@@ -177,13 +187,17 @@ document.addEventListener("DOMContentLoaded", () => {
           }
           totalNormalized += amountInMainCurrency;
 
+          // Date Formatting
           const dateObj = new Date(e.expanseDate);
           const day = dateObj.getDate();
           const month = dateObj.toLocaleString('it-IT', { month: 'short' }).replace('.', '').toUpperCase();
+
           const icon = categoryMap[e.categoryId] || '🧾';
 
+          // Card HTML
           const card = document.createElement("div");
           card.className = "bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden flex transition group";
+          
           card.innerHTML = `
             <div class="edit-area flex-grow p-4 flex items-center justify-between cursor-pointer hover:bg-gray-50 transition-colors">
                 <div class="flex items-center gap-4">
@@ -191,38 +205,59 @@ document.addEventListener("DOMContentLoaded", () => {
                     <span class="text-lg font-bold">${day}</span>
                     <span class="text-[9px] font-bold uppercase mt-[2px]">${month}</span>
                   </div>
+
                   <div class="overflow-hidden">
-                    <h3 class="font-bold text-gray-800 truncate text-base"><span class="mr-1">${icon}</span> ${e.name}</h3>
+                    <h3 class="font-bold text-gray-800 truncate text-base">
+                        <span class="mr-1">${icon}</span> ${e.name}
+                    </h3>
                     <p class="text-xs text-gray-500 truncate">${e.description || ""}</p>
                   </div>
                 </div>
+                
                 <div class="text-right pl-2 shrink-0">
                   <span class="block font-bold text-gray-900 text-lg whitespace-nowrap">${amt.toFixed(2)} <span class="text-sm">${curr}</span></span>
                   <span class="block text-[10px] text-gray-400 font-medium whitespace-nowrap">${subText}</span>
                 </div>
             </div>
+
             <div class="w-[1px] bg-gray-100 my-2"></div>
-            <button class="delete-btn w-14 flex items-center justify-center !bg-transparent !border-0 !shadow-none hover:!bg-transparent focus:outline-none cursor-pointer shrink-0 group">
-               <span class="text-red-500 text-xl font-bold">🗑️</span>
+
+            <button class="delete-btn w-14 flex items-center justify-center !bg-transparent !border-0 !shadow-none hover:!bg-transparent focus:outline-none cursor-pointer shrink-0 group" title="Elimina">
+               <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-6 h-6 text-red-500 transition-transform duration-200 transform group-hover:scale-125">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="m14.74 9-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 0 1-2.244 2.077H8.084a2.25 2.25 0 0 1-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 0 0-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 0 1 3.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 0 0-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 0 0-7.5 0" />
+                </svg>
             </button>
           `;
-          
-          card.querySelector(".delete-btn").addEventListener("click", async (ev) => {
+
+          // Eventi Card
+          const deleteBtn = card.querySelector(".delete-btn");
+          deleteBtn.addEventListener("click", async (ev) => {
             ev.stopPropagation(); 
-            if(confirm("Eliminare questa spesa?")) await deleteExpense(e.expanseId);
+            if(confirm("Eliminare questa spesa?")) {
+               await deleteExpense(currentId);
+            }
           });
-          card.querySelector(".edit-area").addEventListener("click", () => openEditForm(e));
+
+          const editArea = card.querySelector(".edit-area");
+          editArea.addEventListener("click", () => {
+             openEditForm(e);
+          });
+
           listContainer.appendChild(card);
         });
+
         tabContentEl.appendChild(listContainer);
-        
+
+        // Aggiorna totali header
         headerAmountEl.textContent = totalNormalized.toFixed(2);
         headerCurrencyEl.textContent = mainTravelCurrency;
         headerTotalSection.classList.remove("hidden");
+        
         if (currentExchangeRate && mainTravelCurrency !== "EUR") {
            headerTotalHomeEl.textContent = (totalNormalized * currentExchangeRate).toFixed(2);
            headerConvertedBox.classList.remove("hidden");
         }
+
       } else {
         headerAmountEl.textContent = "0.00";
         tabContentEl.innerHTML = `<div class="text-center mt-10 opacity-60">Nessuna spesa registrata.</div>`;
@@ -248,8 +283,10 @@ document.addEventListener("DOMContentLoaded", () => {
     await renderAddExpense(expense); 
   }
 
+// --- 7. FORM DINAMICO (Aggiungi/Modifica con DATA) ---
   async function renderAddExpense(expenseToEdit = null) {
     tabContentEl.innerHTML = `<div class="p-10 text-center animate-pulse">Caricamento modulo...</div>`;
+    
     try {
       const [catRes, travelRes] = await Promise.all([
         fetch(`${API_BASE_URL}/Categories`),
@@ -257,66 +294,133 @@ document.addEventListener("DOMContentLoaded", () => {
       ]);
       const categories = await catRes.json();
       const travel = await travelRes.json();
-      
+
       const title = expenseToEdit ? "Modifica Spesa" : "Nuova Spesa";
-      const btnText = expenseToEdit ? "Aggiorna" : "Salva";
+      const btnText = expenseToEdit ? "Aggiorna Spesa" : "Salva Spesa";
+
+      // Valori di Default
       const defName = expenseToEdit ? expenseToEdit.name : "";
       const defAmount = expenseToEdit ? expenseToEdit.amount : "";
       const defCatId = expenseToEdit ? expenseToEdit.categoryId : "";
       const defCurr = expenseToEdit ? expenseToEdit.currencyCode : travel.travelCurrencyCode;
+      
+      // Data di default
+      const defDate = expenseToEdit ? expenseToEdit.expanseDate : new Date().toISOString();
 
       tabContentEl.innerHTML = `
         <div class="bg-white rounded-2xl shadow-sm p-6 mb-20 animate-fade-in">
           <h2 class="text-xl font-bold mb-6 text-gray-800">${title}</h2>
           <form id="expense-form" class="flex flex-col gap-5">
+            
             <div>
-              <label class="block text-xs font-bold text-gray-500 uppercase mb-1">Nome Spesa</label>
-              <input name="name" value="${defName}" class="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 font-semibold" required />
+               <label class="block text-xs font-bold text-gray-500 uppercase mb-1">Data</label>
+               <div class="relative">
+                 <input id="expense-date" name="expanseDate" type="text" class="w-full bg-white border border-gray-200 rounded-xl px-4 py-3 font-semibold text-gray-800 focus:outline-none focus:ring-2 focus:ring-sky-400 cursor-pointer" placeholder="Seleziona data..." required />
+                 <div class="absolute right-4 top-3.5 pointer-events-none text-gray-400">📅</div>
+               </div>
             </div>
+
+            <div>
+              <label class="block text-xs font-bold text-gray-500 uppercase mb-1">Cosa hai comprato?</label>
+              <input name="name" value="${defName}" class="w-full bg-white border border-gray-200 rounded-xl px-4 py-3 font-semibold focus:outline-none focus:ring-2 focus:ring-sky-400 text-gray-800" placeholder="Es. Cena, Taxi..." required />
+            </div>
+
             <div class="grid grid-cols-5 gap-4">
               <div class="col-span-3">
                 <label class="block text-xs font-bold text-gray-500 uppercase mb-1">Importo</label>
-                <input type="number" step="0.01" name="amount" value="${defAmount}" class="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 font-bold text-lg" required />
+                <input type="number" step="0.01" name="amount" value="${defAmount}" class="w-full bg-white border border-gray-200 rounded-xl px-4 py-3 font-bold text-lg text-gray-800 focus:outline-none focus:ring-2 focus:ring-sky-400" placeholder="0.00" required />
               </div>
+              
               <div class="col-span-2">
                 <label class="block text-xs font-bold text-gray-500 uppercase mb-1">Valuta</label>
-                <select name="currencyCode" class="w-full bg-white border border-gray-200 rounded-xl px-2 py-3 font-bold h-[52px]">
+                <select name="currencyCode" class="w-full bg-white border border-gray-200 rounded-xl px-2 py-3 font-bold h-[54px] text-gray-800 focus:outline-none focus:ring-2 focus:ring-sky-400">
                   <option value="${travel.travelCurrencyCode}" ${defCurr === travel.travelCurrencyCode ? 'selected' : ''}>${travel.travelCurrencyCode}</option>
                   <option value="${travel.homeCurrencyCode}" ${defCurr === travel.homeCurrencyCode ? 'selected' : ''}>${travel.homeCurrencyCode}</option>
                 </select>
               </div>
             </div>
+
             <div>
               <label class="block text-xs font-bold text-gray-500 uppercase mb-1">Categoria</label>
-              <select name="categoryId" class="w-full bg-white border border-gray-200 rounded-xl px-4 py-3" required>
+              <select name="categoryId" class="w-full bg-white border border-gray-200 rounded-xl px-4 py-3 text-gray-800 focus:outline-none focus:ring-2 focus:ring-sky-400" required>
                 <option value="" disabled ${!defCatId ? 'selected' : ''}>Seleziona...</option>
-                ${categories.map(c => `<option value="${c.categoryId || c.id}" ${defCatId === (c.categoryId || c.id) ? 'selected' : ''}>${c.icon || ''} ${c.name}</option>`).join('')}
+                ${categories.map(c => `
+                    <option value="${c.categoryId || c.id}" ${defCatId === (c.categoryId || c.id) ? 'selected' : ''}>
+                        ${c.icon || ''} ${c.name}
+                    </option>`).join('')}
               </select>
             </div>
-            <button type="submit" class="bg-sky-500 text-white font-bold py-4 rounded-xl shadow-lg mt-4 active:scale-95 transition">${btnText}</button>
-            <button type="button" id="cancel-edit" class="text-gray-400 text-sm underline mt-2 w-full text-center">Annulla</button>
+
+            <button type="submit" class="bg-sky-500 text-white font-bold py-4 rounded-xl shadow-lg mt-4 active:scale-95 transition hover:bg-sky-600">${btnText}</button>
+            
+            <button type="button" id="cancel-edit" class="bg-transparent border-0 text-gray-500 font-bold py-4 rounded-xl mt-2 hover:bg-gray-100 transition active:scale-95">Annulla</button>
           </form>
         </div>`;
 
+      // INIZIALIZZAZIONE CALENDARIO
+      flatpickr("#expense-date", {
+         locale: "it",
+         dateFormat: "Y-m-d",
+         altInput: true,
+         altFormat: "j F Y",
+         defaultDate: defDate,
+         disableMobile: "true",
+         allowInput: true
+      });
+
+      // LOGICA SUBMIT
       document.getElementById("expense-form").addEventListener("submit", async (e) => {
         e.preventDefault();
         const fd = new FormData(e.target);
+        const dateStr = fd.get("expanseDate");
+
         const payload = {
-          travelId, categoryId: fd.get("categoryId"), expanseDate: new Date().toISOString(),
-          name: fd.get("name"), amount: Number(fd.get("amount")), currencyCode: fd.get("currencyCode")
+          travelId,
+          categoryId: fd.get("categoryId"),
+          expanseDate: new Date(dateStr).toISOString(),
+          name: fd.get("name"),
+          amount: Number(fd.get("amount")),
+          currencyCode: fd.get("currencyCode"),
+          description: ""
         };
+
         let url = `${API_BASE_URL}/Expanses`;
         let method = "POST";
-        if (editingExpenseId) { method = "PUT"; url += `/${editingExpenseId}`; payload.expanseId = editingExpenseId; }
-        
-        const res = await fetch(url, { method, headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload) });
-        if (res.ok) switchTab("list");
-        else alert("Errore salvataggio");
+
+        if (editingExpenseId) {
+            method = "PUT";
+            url = `${API_BASE_URL}/Expanses/${editingExpenseId}`; 
+            payload.expanseId = editingExpenseId;
+        }
+
+        const res = await fetch(url, {
+          method: method,
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload),
+        });
+
+        if (res.ok) {
+          editingExpenseId = null; 
+          const listTab = document.querySelector('[data-tab="list"]');
+          if (listTab) listTab.click();
+        } else {
+            console.error(await res.text());
+            alert("Errore nel salvataggio");
+        }
       });
-      document.getElementById("cancel-edit").addEventListener("click", () => switchTab("list"));
+
+      // LOGICA ANNULLA
+      const cancelBtn = document.getElementById("cancel-edit");
+      if(cancelBtn) {
+          cancelBtn.addEventListener("click", () => {
+              editingExpenseId = null;
+              const listTab = document.querySelector('[data-tab="list"]');
+              if (listTab) listTab.click();
+          });
+      }
+
     } catch (err) { console.error(err); }
   }
-
   async function renderChart() {
     tabContentEl.innerHTML = `<div class="flex justify-center mt-10"><div class="animate-spin h-8 w-8 border-b-2 border-sky-500 rounded-full"></div></div>`;
     try {

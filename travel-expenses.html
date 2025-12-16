@@ -5,6 +5,10 @@
     <title>Dettaglio Viaggio</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
     <script src="https://cdn.tailwindcss.com"></script>
+    
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+    <link rel="stylesheet" href="https://npmcdn.com/flatpickr/dist/themes/airbnb.css">
+
     <link rel="stylesheet" href="/src/style.css" />
     <style>
       .no-scrollbar::-webkit-scrollbar { display: none; }
@@ -14,6 +18,10 @@
         to { opacity: 1; transform: translateY(0); }
       }
       .animate-fade-in { animation: fadeIn 0.3s ease-out forwards; }
+      @keyframes slideInRight { from { opacity: 0; transform: translateX(20px); } to { opacity: 1; transform: translateX(0); } }
+      @keyframes slideInLeft { from { opacity: 0; transform: translateX(-20px); } to { opacity: 1; transform: translateX(0); } }
+      .animate-slide-right { animation: slideInRight 0.2s ease-out forwards; }
+      .animate-slide-left { animation: slideInLeft 0.2s ease-out forwards; }
     </style>
   </head>
 
@@ -56,31 +64,31 @@
     </button>
 
     <nav class="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-100 shadow-[0_-4px_20px_rgba(0,0,0,0.05)] px-8 py-2 flex justify-between items-center z-50 pb-safe safe-area-bottom">
-      
       <button class="nav-btn group flex flex-col items-center gap-1 w-16 active" data-tab="list">
         <div class="icon-container w-10 h-8 rounded-xl flex items-center justify-center transition-all duration-300 group-[.active]:bg-sky-100 group-[.active]:text-sky-600 text-gray-400">
            <span class="text-xl filter grayscale group-[.active]:grayscale-0 transition-all">💸</span>
         </div>
         <span class="text-[10px] font-bold text-gray-400 group-[.active]:text-sky-600 transition-colors">Spese</span>
       </button>
-
       <button class="nav-btn group flex flex-col items-center gap-1 w-16" data-tab="chart">
         <div class="icon-container w-10 h-8 rounded-xl flex items-center justify-center transition-all duration-300 group-[.active]:bg-sky-100 group-[.active]:text-sky-600 text-gray-400">
            <span class="text-xl filter grayscale group-[.active]:grayscale-0 transition-all">📊</span>
         </div>
         <span class="text-[10px] font-bold text-gray-400 group-[.active]:text-sky-600 transition-colors">Grafico</span>
       </button>
-
       <button class="nav-btn group flex flex-col items-center gap-1 w-16" data-tab="fx">
         <div class="icon-container w-10 h-8 rounded-xl flex items-center justify-center transition-all duration-300 group-[.active]:bg-sky-100 group-[.active]:text-sky-600 text-gray-400">
            <span class="text-xl filter grayscale group-[.active]:grayscale-0 transition-all">💱</span>
         </div>
         <span class="text-[10px] font-bold text-gray-400 group-[.active]:text-sky-600 transition-colors">Cambio</span>
       </button>
-
     </nav>
     
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    
+    <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+    <script src="https://npmcdn.com/flatpickr/dist/l10n/it.js"></script>
+
     <script type="module" src="/src/travel-expenses.js"></script>
   </body>
 </html>
