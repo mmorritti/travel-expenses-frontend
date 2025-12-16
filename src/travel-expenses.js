@@ -16,6 +16,7 @@ document.addEventListener("DOMContentLoaded", () => {
   const travelDatesEl = document.getElementById("travel-dates");
   const tabContentEl = document.getElementById("tab-content");
   const navButtons = document.querySelectorAll(".nav-btn");
+  const fabAddBtn = document.getElementById("fab-add-expense"); // <--- NUOVO: Tasto Galleggiante
 
   // Elementi Header per i Totali
   const headerTotalSection = document.getElementById("header-total-section");
@@ -34,6 +35,7 @@ document.addEventListener("DOMContentLoaded", () => {
     backBtn.addEventListener("click", () => window.location.href = "/index.html");
   }
 
+  // Gestione click Navbar (Spese, Grafico, Cambio)
   navButtons.forEach((btn) => {
     btn.addEventListener("click", () => {
       navButtons.forEach((b) => b.classList.remove("active"));
@@ -42,15 +44,37 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   });
 
-  // --- 2. GESTIONE TAB ---
+  // Gestione click FAB (Tasto + Galleggiante)
+  if (fabAddBtn) {
+    fabAddBtn.addEventListener("click", () => {
+        // Rimuoviamo 'active' dagli altri bottoni perché siamo in modalità "Aggiungi"
+        navButtons.forEach((b) => b.classList.remove("active"));
+        renderTab("add");
+    });
+  }
+
+  // --- 2. GESTIONE TAB E VISIBILITÀ FAB ---
   async function renderTab(tab) {
+    
+    // Logica Visibilità FAB: Nascondilo se siamo nel form di aggiunta
+    if (fabAddBtn) {
+        if (tab === "add") {
+            fabAddBtn.classList.add("hidden");
+        } else {
+            fabAddBtn.classList.remove("hidden");
+        }
+    }
+
     if (tab === "add") {
       editingExpenseId = null; 
       await renderAddExpense();
     } else if (tab === "list") {
       await renderExpensesList();
     } else if (tab === "chart") {
-       tabContentEl.innerHTML = `<p class="text-center mt-10 text-gray-500 font-medium">Grafici in arrivo...</p>`;
+       await renderChart();
+    } else if (tab === "fx") {
+       // Placeholder per la sezione cambio
+       tabContentEl.innerHTML = `<div class="flex flex-col items-center justify-center mt-20 opacity-60"><span class="text-4xl">💱</span><p class="mt-4 font-medium">Calcolatrice cambio in arrivo...</p></div>`;
     }
   }
 
@@ -63,7 +87,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
       travelNameEl.textContent = trip.name;
       
-      // --- FIX DATE: Logica reinserita ---
+      // --- FIX DATE ---
       if (travelDatesEl) {
         if (trip.startDate && trip.endDate) {
             const start = new Date(trip.startDate).toLocaleDateString("it-IT", { day: 'numeric', month: 'short' });
@@ -101,14 +125,13 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   }
 
-  // --- 4. LISTA SPESE (Aggiornata con Data Completa e Icona Categoria) ---
+  // --- 4. LISTA SPESE ---
   async function renderExpensesList() {
     editingExpenseId = null;
 
     tabContentEl.innerHTML = `<div class="flex justify-center mt-10"><div class="animate-spin h-8 w-8 border-b-2 border-sky-500 rounded-full"></div></div>`;
     
     try {
-      // 1. Scarichiamo SPESE e CATEGORIE insieme (per avere le icone)
       const [expRes, catRes] = await Promise.all([
         fetch(`${API_BASE_URL}/Expanses?travelId=${travelId}`),
         fetch(`${API_BASE_URL}/Categories`)
@@ -117,7 +140,6 @@ document.addEventListener("DOMContentLoaded", () => {
       const expenses = await expRes.json();
       const categories = await catRes.json();
 
-      // Mappiamo le categorie per ID per trovare l'icona velocemente: { 'guid-id': '🍔', ... }
       const categoryMap = {};
       categories.forEach(c => {
         const id = c.categoryId || c.id;
@@ -129,7 +151,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
       if (expenses.length > 0) {
         const listContainer = document.createElement("div");
-        listContainer.className = "flex flex-col gap-3 pb-24";
+        listContainer.className = "flex flex-col gap-3 pb-24"; // Padding bottom extra per il FAB
 
         expenses.forEach((e) => {
           const currentId = e.expanseId; 
@@ -148,23 +170,20 @@ document.addEventListener("DOMContentLoaded", () => {
           }
           totalNormalized += amountInMainCurrency;
 
-          // --- FORMATTAZIONE DATA (Giorno e Mese) ---
+          // Date Formatting
           const dateObj = new Date(e.expanseDate);
-          const day = dateObj.getDate(); // es. 15
-          // Ottiene mese abbreviato in italiano (es. "dic") e lo rende maiuscolo
+          const day = dateObj.getDate();
           const month = dateObj.toLocaleString('it-IT', { month: 'short' }).replace('.', '').toUpperCase();
 
-          // --- RECUPERO ICONA ---
           const icon = categoryMap[e.categoryId] || '🧾';
 
-          // --- CREAZIONE CARD ---
+          // Card HTML
           const card = document.createElement("div");
           card.className = "bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden flex transition group";
           
           card.innerHTML = `
             <div class="edit-area flex-grow p-4 flex items-center justify-between cursor-pointer hover:bg-gray-50 transition-colors">
                 <div class="flex items-center gap-4">
-                  
                   <div class="bg-gray-50 rounded-lg w-12 h-12 flex flex-col items-center justify-center text-sky-600 border border-gray-100 shrink-0 leading-none">
                     <span class="text-lg font-bold">${day}</span>
                     <span class="text-[9px] font-bold uppercase mt-[2px]">${month}</span>
@@ -193,7 +212,7 @@ document.addEventListener("DOMContentLoaded", () => {
             </button>
           `;
 
-          // Eventi
+          // Eventi Card
           const deleteBtn = card.querySelector(".delete-btn");
           deleteBtn.addEventListener("click", async (ev) => {
             ev.stopPropagation(); 
@@ -246,13 +265,16 @@ document.addEventListener("DOMContentLoaded", () => {
   async function openEditForm(expense) {
     editingExpenseId = expense.expanseId; 
     
+    // Resetta navigazione
     navButtons.forEach((b) => b.classList.remove("active"));
-    document.querySelector('[data-tab="add"]').classList.add("active");
+    
+    // Nascondi FAB manualmente poiché stiamo entrando in edit mode
+    if (fabAddBtn) fabAddBtn.classList.add("hidden");
 
     await renderAddExpense(expense); 
   }
 
-  // --- 7. FORM DINAMICO ---
+  // --- 7. FORM DINAMICO (Aggiungi/Modifica) ---
   async function renderAddExpense(expenseToEdit = null) {
     tabContentEl.innerHTML = `<div class="p-10 text-center animate-pulse">Caricamento modulo...</div>`;
     
@@ -273,7 +295,7 @@ document.addEventListener("DOMContentLoaded", () => {
       const defCurr = expenseToEdit ? expenseToEdit.currencyCode : travel.travelCurrencyCode;
 
       tabContentEl.innerHTML = `
-        <div class="bg-white rounded-2xl shadow-sm p-6 mb-20">
+        <div class="bg-white rounded-2xl shadow-sm p-6 mb-20 animate-fade-in">
           <h2 class="text-xl font-bold mb-6 text-gray-800">${title}</h2>
           <form id="expense-form" class="flex flex-col gap-5">
             
@@ -309,10 +331,11 @@ document.addEventListener("DOMContentLoaded", () => {
 
             <button type="submit" class="bg-sky-500 text-white font-bold py-4 rounded-xl shadow-lg mt-4 active:scale-95 transition">${btnText}</button>
             
-            ${expenseToEdit ? `<button type="button" id="cancel-edit" class="text-gray-400 text-sm underline mt-2 w-full text-center">Annulla modifica</button>` : ''}
+            <button type="button" id="cancel-edit" class="text-gray-400 text-sm underline mt-2 w-full text-center">Annulla</button>
           </form>
         </div>`;
 
+      // SUBMIT
       document.getElementById("expense-form").addEventListener("submit", async (e) => {
         e.preventDefault();
         const fd = new FormData(e.target);
@@ -344,22 +367,203 @@ document.addEventListener("DOMContentLoaded", () => {
 
         if (res.ok) {
           editingExpenseId = null; 
-          document.querySelector('[data-tab="list"]').click(); 
+          // Simuliamo click su 'list' per tornare indietro e riattivare il FAB
+          const listTab = document.querySelector('[data-tab="list"]');
+          if (listTab) listTab.click();
         } else {
             console.error(await res.text());
             alert("Errore nel salvataggio");
         }
       });
 
+      // ANNULLA
       const cancelBtn = document.getElementById("cancel-edit");
       if(cancelBtn) {
           cancelBtn.addEventListener("click", () => {
               editingExpenseId = null;
-              document.querySelector('[data-tab="list"]').click();
+              // Simuliamo click su 'list'
+              const listTab = document.querySelector('[data-tab="list"]');
+              if (listTab) listTab.click();
           });
       }
 
     } catch (err) { console.error(err); }
+  }
+
+  // --- 8. GRAFICO (Versione Blindata & Debug) ---
+  async function renderChart() {
+    console.log("--- INIZIO RENDER CHART ---"); 
+    tabContentEl.innerHTML = `<div class="flex justify-center mt-10"><div class="animate-spin h-8 w-8 border-b-2 border-sky-500 rounded-full"></div></div>`;
+
+    try {
+      const [expRes, catRes] = await Promise.all([
+        fetch(`${API_BASE_URL}/Expanses?travelId=${travelId}`),
+        fetch(`${API_BASE_URL}/Categories`)
+      ]);
+
+      if (!expRes.ok || !catRes.ok) throw new Error("Errore API nel recupero dati");
+
+      const expenses = await expRes.json();
+      const categories = await catRes.json();
+
+      console.log(`Spese trovate: ${expenses.length}`);
+
+      if (expenses.length === 0) {
+        tabContentEl.innerHTML = `
+            <div class="text-center mt-20 opacity-60 flex flex-col items-center gap-4">
+                <div class="text-6xl">🍩</div>
+                <p class="font-medium text-gray-500">Nessuna spesa da analizzare.</p>
+            </div>`;
+        return;
+      }
+
+      const fixedColors = {
+        "Cibo e bevande": "#f97316",
+        "Trasporti locali": "#06b6d4",
+        "Alloggio": "#8b5cf6",
+        "Voli": "#1d4ed8",
+        "Souvenir e shopping": "#ec4899",
+        "Altro": "#9ca3af"
+      };
+      
+      const fallbackPalette = ["#eab308", "#10b981", "#6366f1", "#f43f5e"];
+
+      const catMap = {};
+      let fallbackIndex = 0;
+
+      categories.forEach(c => {
+        const cName = c.name || c.Name || "Sconosciuto";
+        const cId = c.categoryId || c.CategoryId || c.id || c.Id;
+        const cIcon = c.icon || c.Icon || "📦";
+
+        let color = fixedColors[cName];
+        if (!color) {
+            color = fallbackPalette[fallbackIndex % fallbackPalette.length];
+            fallbackIndex++;
+        }
+        if (cId) catMap[cId] = { name: cName, color: color, icon: cIcon };
+      });
+
+      const groupedData = {};
+      let totalChartAmount = 0;
+      
+      const safeRate = (currentExchangeRate && !isNaN(currentExchangeRate) && currentExchangeRate > 0) ? currentExchangeRate : 1;
+
+      console.log(`Valuta Viaggio: ${mainTravelCurrency}, Tasso usato: ${safeRate}`);
+
+      expenses.forEach(e => {
+        const eCatId = e.categoryId || e.CategoryId;
+        const catInfo = catMap[eCatId] || { name: "Altro", color: "#9ca3af", icon: "❓" };
+        const catKey = catInfo.name; 
+
+        let rawAmount = Number(e.amount);
+        if (isNaN(rawAmount)) rawAmount = 0;
+
+        let normalizedAmount = rawAmount;
+        if (e.currencyCode === "EUR" && mainTravelCurrency !== "EUR") {
+            normalizedAmount = rawAmount / safeRate;
+        } else if (e.currencyCode !== mainTravelCurrency && e.currencyCode !== "EUR") {
+            console.warn(`Valuta non gestita: ${e.currencyCode}`);
+        }
+        
+        if (!isFinite(normalizedAmount)) normalizedAmount = 0;
+
+        if (!groupedData[catKey]) {
+            groupedData[catKey] = { amount: 0, color: catInfo.color, icon: catInfo.icon };
+        }
+        groupedData[catKey].amount += normalizedAmount;
+        totalChartAmount += normalizedAmount;
+      });
+
+      const labels = Object.keys(groupedData).sort((a, b) => groupedData[b].amount - groupedData[a].amount);
+      const dataValues = labels.map(k => groupedData[k].amount);
+      const backgroundColors = labels.map(k => groupedData[k].color);
+
+      tabContentEl.innerHTML = `
+        <div class="bg-white rounded-2xl shadow-sm p-6 mb-24 border border-gray-100 animate-fade-in">
+            <h2 class="text-lg font-bold text-gray-800 mb-6 text-center">Analisi Spese (${mainTravelCurrency})</h2>
+            
+            <div class="relative w-full max-w-[260px] mx-auto aspect-square mb-8">
+                <canvas id="expenseChart"></canvas>
+                <div class="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
+                    <span class="text-xs text-gray-400 font-semibold uppercase tracking-widest">Totale</span>
+                    <span class="text-2xl font-black text-gray-800">${totalChartAmount.toLocaleString('it-IT', { maximumFractionDigits: 0 })}</span>
+                    <span class="text-[10px] text-gray-400 font-bold bg-gray-100 px-1.5 py-0.5 rounded">${mainTravelCurrency}</span>
+                </div>
+            </div>
+
+            <div class="flex flex-col gap-3">
+                ${labels.map((label) => {
+                    const item = groupedData[label];
+                    const percentage = (totalChartAmount > 0) ? ((item.amount / totalChartAmount) * 100).toFixed(1) : "0.0";
+                    return `
+                    <div class="flex items-center justify-between p-3 hover:bg-gray-50 rounded-xl transition-colors border border-transparent hover:border-gray-100">
+                        <div class="flex items-center gap-3">
+                            <div class="w-10 h-10 rounded-full flex items-center justify-center text-lg shadow-sm shrink-0" style="background-color: ${item.color}20; color: ${item.color}">
+                                ${item.icon}
+                            </div>
+                            <div class="flex flex-col">
+                                <span class="text-sm font-bold text-gray-700">${label}</span>
+                                <div class="flex items-center gap-2">
+                                     <div class="w-16 h-1.5 bg-gray-100 rounded-full overflow-hidden">
+                                        <div class="h-full rounded-full" style="width: ${percentage}%; background-color: ${item.color}"></div>
+                                     </div>
+                                     <span class="text-[10px] text-gray-400 font-bold">${percentage}%</span>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="text-right">
+                            <div class="text-sm font-bold text-gray-900">${item.amount.toLocaleString('it-IT', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</div>
+                            <div class="text-[10px] text-gray-400 font-medium">${mainTravelCurrency}</div>
+                        </div>
+                    </div>
+                    `;
+                }).join('')}
+            </div>
+        </div>
+      `;
+
+      const canvas = document.getElementById('expenseChart');
+      if (canvas) {
+          const ctx = canvas.getContext('2d');
+          new Chart(ctx, {
+            type: 'doughnut',
+            data: {
+              labels: labels,
+              datasets: [{
+                data: dataValues,
+                backgroundColor: backgroundColors,
+                borderWidth: 0, 
+                hoverOffset: 4, 
+                borderRadius: 20, 
+                spacing: 5,       
+                cutout: '75%'     
+              }]
+            },
+            options: {
+              responsive: true,
+              maintainAspectRatio: false,
+              plugins: {
+                legend: { display: false }, 
+                tooltip: {
+                    backgroundColor: 'rgba(255, 255, 255, 0.95)',
+                    titleColor: '#111827',
+                    bodyColor: '#374151',
+                    callbacks: {
+                        label: function(context) {
+                            return ` ${context.parsed.toLocaleString('it-IT', { minimumFractionDigits: 2 })} ${mainTravelCurrency}`;
+                        }
+                    }
+                }
+              }
+            }
+          });
+      }
+
+    } catch (err) {
+      console.error("ERRORE CRITICO GRAFICO:", err);
+      tabContentEl.innerHTML = `<div class="p-6 text-center"><p class="text-red-500 font-bold mb-2">Errore nel grafico</p><p class="text-xs text-gray-500 bg-gray-100 p-2 rounded">${err.message}</p></div>`;
+    }
   }
 
   loadTravelHeader();

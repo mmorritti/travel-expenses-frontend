@@ -3,73 +3,76 @@
   <head>
     <meta charset="UTF-8" />
     <title>Nuovo Viaggio</title>
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
     <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+    <link rel="stylesheet" href="https://npmcdn.com/flatpickr/dist/themes/airbnb.css">
+    
     <link rel="stylesheet" href="/src/style.css" />
   </head>
-  <body class="bg-gray-100 min-h-screen flex flex-col">
+  <body class="bg-gray-50 min-h-screen flex flex-col antialiased">
 
-    <header class="bg-sky-300 px-4 py-4 shadow-sm flex items-center relative">
-      <button id="back-btn" class="text-2xl mr-4 focus:outline-none">←</button>
-      <h1 class="text-xl font-bold text-black tracking-wide">
-        Nuovo Viaggio
-      </h1>
-    </header>
+    <div class="sticky top-0 z-50 bg-sky-400 shadow-md">
+      <header class="flex items-center px-5 py-4 relative">
+        <button id="back-btn" class="text-white text-2xl mr-4 focus:outline-none hover:opacity-80 transition-opacity">
+          ←
+        </button>
+        <h1 class="text-xl font-bold text-white tracking-tight">
+          Nuovo Viaggio
+        </h1>
+      </header>
+    </div>
 
-    <main class="flex-1 p-6">
-      <form id="travel-form" class="flex flex-col gap-5 max-w-lg mx-auto">
+    <main class="flex-1 p-4 pb-10">
+      
+      <form id="travel-form" class="flex flex-col gap-5 max-w-lg mx-auto bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
         
         <div class="flex flex-col gap-1">
-          <label for="name" class="font-semibold text-gray-700">Nome Viaggio</label>
+          <label for="name" class="text-xs font-bold text-gray-500 uppercase mb-1">Nome Viaggio</label>
           <input
             type="text"
             id="name"
-            class="border border-gray-300 rounded-lg p-3 focus:outline-none focus:border-sky-500"
+            class="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 font-semibold focus:outline-none focus:ring-2 focus:ring-sky-400"
             placeholder="Es. Vacanza a Roma"
             required
           />
         </div>
 
         <div class="flex gap-4">
-          <div class="flex-1 flex flex-col gap-1">
-            <label for="startDate" class="font-semibold text-gray-700">Inizio</label>
+          <div class="flex-1 flex flex-col gap-1 relative">
+            <label for="startDate" class="text-xs font-bold text-gray-500 uppercase mb-1">Inizio</label>
             <input
-              type="date"
+              type="text"
               id="startDate"
-              class="border border-gray-300 rounded-lg p-3 focus:outline-none focus:border-sky-500"
+              class="w-full bg-white border border-gray-200 rounded-xl px-4 py-3 font-semibold text-sm focus:outline-none focus:ring-2 focus:ring-sky-400 cursor-pointer"
+              placeholder="Seleziona..."
+              readonly="readonly"
               required
             />
+            <div class="absolute right-3 top-[34px] pointer-events-none text-gray-400">📅</div>
           </div>
-          <div class="flex-1 flex flex-col gap-1">
-            <label for="endDate" class="font-semibold text-gray-700">Fine</label>
+          <div class="flex-1 flex flex-col gap-1 relative">
+            <label for="endDate" class="text-xs font-bold text-gray-500 uppercase mb-1">Fine</label>
             <input
-              type="date"
+              type="text"
               id="endDate"
-              class="border border-gray-300 rounded-lg p-3 focus:outline-none focus:border-sky-500"
+              class="w-full bg-white border border-gray-200 rounded-xl px-4 py-3 font-semibold text-sm focus:outline-none focus:ring-2 focus:ring-sky-400 cursor-pointer"
+              placeholder="Seleziona..."
+              readonly="readonly"
               required
             />
+             <div class="absolute right-3 top-[34px] pointer-events-none text-gray-400">📅</div>
           </div>
-        </div>
-
-        <div class="flex flex-col gap-1">
-          <label for="countryCode" class="font-semibold text-gray-700">Codice Paese (2 lettere)</label>
-          <input
-            type="text"
-            id="countryCode"
-            maxlength="2"
-            class="border border-gray-300 rounded-lg p-3 uppercase focus:outline-none focus:border-sky-500"
-            placeholder="Es. IT"
-          />
         </div>
 
         <div class="relative flex flex-col gap-1">
-          <label class="font-semibold text-gray-700">Valuta Locale</label>
+          <label class="text-xs font-bold text-gray-500 uppercase mb-1">Valuta Locale</label>
           
           <input
             type="text"
             id="travelCurrencySearch"
-            class="border border-gray-300 rounded-lg p-3 focus:outline-none focus:border-sky-500"
-            placeholder="Cerca valuta (es. USD, Dollaro...)"
+            class="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 font-semibold focus:outline-none focus:ring-2 focus:ring-sky-400"
+            placeholder="Cerca valuta (es. USD...)"
             autocomplete="off"
           />
           
@@ -77,24 +80,24 @@
 
           <div
             id="travelCurrencyDropdown"
-            class="absolute top-full left-0 right-0 mt-1 bg-white border border-gray-200 rounded-lg shadow-xl max-h-60 overflow-y-auto hidden z-50"
+            class="absolute top-full left-0 right-0 mt-1 bg-white border border-gray-200 rounded-xl shadow-xl max-h-60 overflow-y-auto hidden z-[60]"
           >
             </div>
         </div>
 
-        <div id="error-box" class="hidden bg-red-100 text-red-700 p-3 rounded-lg text-sm"></div>
+        <div id="error-box" class="hidden bg-red-50 text-red-600 p-4 rounded-xl text-sm border border-red-100 font-medium"></div>
 
         <div class="flex gap-4 mt-4">
           <button
             type="button"
             id="cancel-btn"
-            class="flex-1 py-3 rounded-full border border-gray-300 font-semibold text-gray-600 hover:bg-gray-50 transition"
+            class="flex-1 py-4 rounded-xl border border-gray-200 font-bold text-gray-500 hover:bg-gray-50 transition active:scale-95"
           >
             Annulla
           </button>
           <button
             type="submit"
-            class="flex-1 py-3 rounded-full bg-sky-400 text-white font-bold hover:bg-sky-500 shadow-md transition"
+            class="flex-1 py-4 rounded-xl bg-sky-500 text-white font-bold hover:bg-sky-600 shadow-lg transition active:scale-95"
           >
             Crea Viaggio
           </button>
@@ -102,6 +105,7 @@
       </form>
     </main>
 
-    <script type="module" src="/src/new-travel.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+    <script src="https://npmcdn.com/flatpickr/dist/l10n/it.js"></script> <script type="module" src="/src/new-travel.js"></script>
   </body>
 </html>
