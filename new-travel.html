@@ -5,6 +5,7 @@
     <title>Nuovo Viaggio</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
     <script src="https://cdn.tailwindcss.com"></script>
+    
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
     <link rel="stylesheet" href="https://npmcdn.com/flatpickr/dist/themes/airbnb.css">
     
@@ -46,7 +47,6 @@
               id="startDate"
               class="w-full bg-white border border-gray-200 rounded-xl px-4 py-3 font-semibold text-sm focus:outline-none focus:ring-2 focus:ring-sky-400 cursor-pointer"
               placeholder="Seleziona..."
-              readonly="readonly"
               required
             />
             <div class="absolute right-3 top-[34px] pointer-events-none text-gray-400">📅</div>
@@ -58,7 +58,6 @@
               id="endDate"
               class="w-full bg-white border border-gray-200 rounded-xl px-4 py-3 font-semibold text-sm focus:outline-none focus:ring-2 focus:ring-sky-400 cursor-pointer"
               placeholder="Seleziona..."
-              readonly="readonly"
               required
             />
              <div class="absolute right-3 top-[34px] pointer-events-none text-gray-400">📅</div>
@@ -106,6 +105,8 @@
     </main>
 
     <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
-    <script src="https://npmcdn.com/flatpickr/dist/l10n/it.js"></script> <script type="module" src="/src/new-travel.js"></script>
+    <script src="https://npmcdn.com/flatpickr/dist/l10n/it.js"></script>
+
+    <script type="module" src="/src/new-travel.js"></script>
   </body>
 </html>

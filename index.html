@@ -1,26 +1,31 @@
 <!DOCTYPE html>
 <html lang="it">
-  <head>
-    <meta charset="UTF-8" />
-    <title>I Miei Viaggi</title>
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-    
-    <script src="https://cdn.tailwindcss.com"></script>
-    <link rel="stylesheet" href="/src/style.css" />
-  </head>
+
+    <head>
+      <meta charset="UTF-8" />
+      <title>I Miei Viaggi</title>
+      <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+      
+      <script src="https://cdn.tailwindcss.com"></script>
+      <link rel="stylesheet" href="/src/style.css" />
+    </head>
+
+
 
   <body class="bg-gray-50 min-h-screen flex flex-col font-sans">
     
-    <header class="bg-sky-300 pt-8 pb-6 px-6 rounded-b-[2rem] shadow-sm z-20 flex-shrink-0 relative">
-      <div class="text-center">
-        <h1 class="text-2xl font-bold text-slate-900 leading-tight">
-          I Miei Viaggi
-        </h1>
-        <p class="text-sm font-medium text-slate-700 opacity-80 mt-1">
-          Monitora le tue spese
-        </p>
-      </div>
-    </header>
+    <div class="sticky top-0 z-50 bg-sky-300 shadow-md">
+      <header class="bg-sky-300 pt-8 pb-6 px-6 rounded-b-[2rem] shadow-sm z-20 flex-shrink-0 relative">
+        <div class="text-center">
+          <h1 class="text-2xl font-bold text-slate-900 leading-tight">
+            I Miei Viaggi
+          </h1>
+          <p class="text-sm font-medium text-slate-700 opacity-80 mt-1">
+            Monitora le tue spese
+          </p>
+        </div>
+      </header>
+    </div>
 
     <main class="flex-1 p-5 overflow-y-auto pb-24">
       <div id="travels-list" class="flex flex-col gap-4">

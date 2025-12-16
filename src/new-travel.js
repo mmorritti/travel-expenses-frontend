@@ -2,7 +2,7 @@ import { API_BASE_URL } from "./config.js";
 
 const API_URL = `${API_BASE_URL}/Travels`;
 
-// Valute (Stessa lista di prima...)
+// Valute (Lista abbreviata per leggibilità, tieni la tua completa)
 const CURRENCIES = [
   { code: 'EUR', name: 'Euro', flag: '🇪🇺' },
   { code: 'GBP', name: 'Sterlina britannica', flag: '🇬🇧' },
@@ -10,7 +10,6 @@ const CURRENCIES = [
   { code: 'USD', name: 'Dollaro statunitense', flag: '🇺🇸' },
   { code: 'JPY', name: 'Yen giapponese', flag: '🇯🇵' },
   { code: 'MAD', name: 'Dirham marocchino', flag: '🇲🇦' },
-  // ... (Tieni pure la tua lista completa qui) ...
   { code: 'AUD', name: 'Dollaro australiano', flag: '🇦🇺' }
 ];
 
@@ -24,52 +23,49 @@ document.addEventListener('DOMContentLoaded', () => {
   const currencyCodeInput = document.getElementById('travelCurrencyCode');
   const currencyDropdown = document.getElementById('travelCurrencyDropdown');
 
-  // Gestione tasti indietro
+  // Navigazione
   const goHome = () => window.location.href = '/index.html';
   if(backBtn) backBtn.addEventListener('click', goHome);
   if(cancelBtn) cancelBtn.addEventListener('click', goHome);
 
-  // === 📅 INIZIALIZZAZIONE DATEPICKER (Flatpickr) ===
+  // === 📅 INIZIALIZZAZIONE CALENDARI (Flatpickr) ===
   
-  // 1. Inizializza Data Fine (disabilitata all'inizio o libera)
+  // 1. Data Fine
   const endDatePicker = flatpickr("#endDate", {
-    locale: "it",
-    dateFormat: "Y-m-d",   // Questo è il valore che viene salvato (es. 2024-08-15)
-    altInput: true,        // Attiva la visualizzazione "alternativa"
-    altFormat: "j F Y",    // Questo è quello che vede l'utente (es. 15 Agosto 2024)
-    minDate: "today",
-    disableMobile: "true",
-    allowInput: true       // Permette di aprire il calendario cliccando
-  });
-
-  // 2. Inizializza Data Inizio con logica di collegamento
- const startDatePicker = flatpickr("#startDate", {
     locale: "it",
     dateFormat: "Y-m-d",   
     altInput: true,        
     altFormat: "j F Y",    // Visualizza: 15 Agosto 2024
     minDate: "today",
     disableMobile: "true",
+    allowInput: true       
+  });
+
+  // 2. Data Inizio
+  const startDatePicker = flatpickr("#startDate", {
+    locale: "it",
+    dateFormat: "Y-m-d",   
+    altInput: true,        
+    altFormat: "j F Y",    
+    minDate: "today",
+    disableMobile: "true",
     allowInput: true,
     onChange: function(selectedDates, dateStr, instance) {
-        // Appena scelgo la data inizio:
-        
-        // 1. Imposta la data minima per la fine
+        // Logica Booking: imposta la data minima di fine
         endDatePicker.set('minDate', dateStr);
         
-        // 2. Se la data fine era precedente, puliscila
         const endDateVal = endDatePicker.selectedDates[0];
         if (endDateVal && endDateVal < selectedDates[0]) {
             endDatePicker.clear();
         }
         
-        // 3. Apre automaticamente il calendario di fine (User Experience Top!)
+        // Apre automaticamente il calendario di fine
         setTimeout(() => endDatePicker.open(), 100); 
     }
   });
 
 
-  // === LIVE SEARCH VALUTA (Codice identico a prima) ===
+  // === LIVE SEARCH VALUTA ===
   currencySearchInput.addEventListener('focus', () => {
     renderCurrencyList('');
     showDropdown();
@@ -132,32 +128,26 @@ document.addEventListener('DOMContentLoaded', () => {
   function hideDropdown() { currencyDropdown.classList.add('hidden'); }
 
 
-  // === SUBMIT FORM ===
+  // === SUBMIT ===
   form.addEventListener('submit', async (event) => {
     event.preventDefault();
     hideError();
 
     const name = document.getElementById('name').value.trim();
     
-    // Recuperiamo i valori direttamente da Flatpickr o dagli input (sono sincronizzati)
+    // Flatpickr aggiorna automaticamente il "value" dell'input originale nascosto
     const startDate = document.getElementById('startDate').value;
     const endDate = document.getElementById('endDate').value;
     
     const homeCurrencyCode = 'EUR'; 
-    
     let travelCurrencyCode = currencyCodeInput.value;
+    
     if (!travelCurrencyCode && currencySearchInput.value.length === 3) {
         travelCurrencyCode = currencySearchInput.value.toUpperCase();
     }
 
     if (!name || !startDate || !endDate || !travelCurrencyCode) {
       showError('Compila tutti i campi obbligatori.');
-      return;
-    }
-
-    // Flatpickr gestisce già il controllo date, ma un check extra non fa male
-    if (new Date(startDate) > new Date(endDate)) {
-      showError('La data di fine non valida.');
       return;
     }
 
