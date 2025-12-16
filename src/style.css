@@ -399,3 +399,22 @@ button:focus-visible {
   font-size: 0.8rem;
   color: #4b5563;
 }
+
+/* Animazione Slide In */
+@keyframes slideInRight {
+  from { opacity: 0; transform: translateX(20px); }
+  to { opacity: 1; transform: translateX(0); }
+}
+
+@keyframes slideInLeft {
+  from { opacity: 0; transform: translateX(-20px); }
+  to { opacity: 1; transform: translateX(0); }
+}
+
+.animate-slide-right {
+  animation: slideInRight 0.2s ease-out forwards;
+}
+
+.animate-slide-left {
+  animation: slideInLeft 0.2s ease-out forwards;
+}

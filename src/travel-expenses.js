@@ -16,9 +16,9 @@ document.addEventListener("DOMContentLoaded", () => {
   const travelDatesEl = document.getElementById("travel-dates");
   const tabContentEl = document.getElementById("tab-content");
   const navButtons = document.querySelectorAll(".nav-btn");
-  const fabAddBtn = document.getElementById("fab-add-expense"); // <--- NUOVO: Tasto Galleggiante
+  const fabAddBtn = document.getElementById("fab-add-expense");
 
-  // Elementi Header per i Totali
+  // Elementi Header Totali
   const headerTotalSection = document.getElementById("header-total-section");
   const headerAmountEl = document.getElementById("header-total-amount");
   const headerCurrencyEl = document.getElementById("header-total-currency");
@@ -29,41 +29,57 @@ document.addEventListener("DOMContentLoaded", () => {
   let currentExchangeRate = null; 
   let mainTravelCurrency = "";
   let editingExpenseId = null; 
+  
+  // STATO PER SWIPE
+  let currentTab = "list"; // Teniamo traccia del tab attivo
+  const tabOrder = ["list", "chart", "fx"]; // Ordine logico delle schermate
 
   // --- 1. SETUP NAVIGAZIONE ---
   if (backBtn) {
     backBtn.addEventListener("click", () => window.location.href = "/index.html");
   }
 
-  // Gestione click Navbar (Spese, Grafico, Cambio)
   navButtons.forEach((btn) => {
     btn.addEventListener("click", () => {
-      navButtons.forEach((b) => b.classList.remove("active"));
-      btn.classList.add("active");
-      renderTab(btn.dataset.tab);
+      switchTab(btn.dataset.tab);
     });
   });
 
-  // Gestione click FAB (Tasto + Galleggiante)
   if (fabAddBtn) {
     fabAddBtn.addEventListener("click", () => {
-        // Rimuoviamo 'active' dagli altri bottoni perché siamo in modalità "Aggiungi"
-        navButtons.forEach((b) => b.classList.remove("active"));
-        renderTab("add");
+        switchTab("add");
     });
   }
 
-  // --- 2. GESTIONE TAB E VISIBILITÀ FAB ---
+  // Funzione Helper per cambiare tab e aggiornare UI
+  function switchTab(newTab) {
+    // Aggiorna variabile stato
+    currentTab = newTab;
+
+    // Aggiorna bottoni navbar (rimuove active da tutti, aggiunge a quello giusto)
+    navButtons.forEach((b) => {
+        b.classList.remove("active");
+        if (b.dataset.tab === newTab) b.classList.add("active");
+    });
+
+    // Lancia render
+    renderTab(newTab);
+  }
+
+  // --- 2. GESTIONE TAB ---
   async function renderTab(tab) {
-    
-    // Logica Visibilità FAB: Nascondilo se siamo nel form di aggiunta
+    // Gestione visibilità FAB
     if (fabAddBtn) {
-        if (tab === "add") {
-            fabAddBtn.classList.add("hidden");
-        } else {
-            fabAddBtn.classList.remove("hidden");
-        }
+        if (tab === "add") fabAddBtn.classList.add("hidden");
+        else fabAddBtn.classList.remove("hidden");
     }
+
+    // Rimuovi vecchie classi di animazione per poterle riapplicare
+    tabContentEl.classList.remove("animate-slide-right", "animate-slide-left", "animate-fade-in");
+    
+    // Piccola animazione fade di default
+    void tabContentEl.offsetWidth; // Trigger reflow
+    tabContentEl.classList.add("animate-fade-in");
 
     if (tab === "add") {
       editingExpenseId = null; 
@@ -73,12 +89,24 @@ document.addEventListener("DOMContentLoaded", () => {
     } else if (tab === "chart") {
        await renderChart();
     } else if (tab === "fx") {
-       // Placeholder per la sezione cambio
-       tabContentEl.innerHTML = `<div class="flex flex-col items-center justify-center mt-20 opacity-60"><span class="text-4xl">💱</span><p class="mt-4 font-medium">Calcolatrice cambio in arrivo...</p></div>`;
+       renderFxPage(); // Nuova funzione placeholder
     }
   }
 
-  // --- 3. CARICAMENTO DATI VIAGGIO E TASSI ---
+  // --- NUOVA: Placeholder per pagina FX ---
+  function renderFxPage() {
+      tabContentEl.innerHTML = `
+        <div class="flex flex-col items-center justify-center mt-20 opacity-60 text-center px-6">
+            <span class="text-5xl mb-4">💱</span>
+            <h3 class="text-xl font-bold text-gray-700">Calcolatrice Cambio</h3>
+            <p class="mt-2 text-sm text-gray-500">Inserisci importo in valuta locale per vedere il corrispettivo in EUR.</p>
+            <div class="mt-8 p-4 bg-sky-50 text-sky-700 rounded-xl w-full max-w-xs font-mono text-sm">
+                In arrivo nel prossimo aggiornamento!
+            </div>
+        </div>`;
+  }
+
+  // --- 3. CARICAMENTO DATI ---
   async function loadTravelHeader() {
     try {
       const res = await fetch(`${API_BASE_URL}/Travels/${travelId}`);
@@ -86,8 +114,6 @@ document.addEventListener("DOMContentLoaded", () => {
       const trip = await res.json();
 
       travelNameEl.textContent = trip.name;
-      
-      // --- FIX DATE ---
       if (travelDatesEl) {
         if (trip.startDate && trip.endDate) {
             const start = new Date(trip.startDate).toLocaleDateString("it-IT", { day: 'numeric', month: 'short' });
@@ -98,37 +124,25 @@ document.addEventListener("DOMContentLoaded", () => {
         }
       }
 
-      // --- LOGICA TASSI ---
-      mainTravelCurrency = trip.travelCurrencyCode || trip.TravelCurrencyCode || "EUR";
+      mainTravelCurrency = trip.travelCurrencyCode || "EUR";
       currentExchangeRate = null;
-      const rates = trip.travelCurrencyRates || trip.TravelCurrencyRates;
-      
+      const rates = trip.travelCurrencyRates;
       if (rates && rates.length > 0) {
-        const rateEntry = rates.find(r => {
-          const from = r.fromCurrency || r.FromCurrency;
-          return from === mainTravelCurrency;
-        });
-        if (rateEntry) {
-           const val = rateEntry.rate !== undefined ? rateEntry.rate : rateEntry.Rate;
-           if (val > 0) currentExchangeRate = val;
-        }
+        const rateEntry = rates.find(r => r.fromCurrency === mainTravelCurrency);
+        if (rateEntry && rateEntry.rate > 0) currentExchangeRate = rateEntry.rate;
       }
-
-      if (!currentExchangeRate || currentExchangeRate === 0) {
+      if (!currentExchangeRate) {
         const fallbacks = { "USD": 0.95, "JPY": 0.00612, "MAD": 0.093, "GBP": 1.20 };
         currentExchangeRate = fallbacks[mainTravelCurrency] || 1;
       }
 
       renderExpensesList();
-    } catch (err) {
-      console.error(err);
-    }
+    } catch (err) { console.error(err); }
   }
 
   // --- 4. LISTA SPESE ---
   async function renderExpensesList() {
     editingExpenseId = null;
-
     tabContentEl.innerHTML = `<div class="flex justify-center mt-10"><div class="animate-spin h-8 w-8 border-b-2 border-sky-500 rounded-full"></div></div>`;
     
     try {
@@ -136,31 +150,24 @@ document.addEventListener("DOMContentLoaded", () => {
         fetch(`${API_BASE_URL}/Expanses?travelId=${travelId}`),
         fetch(`${API_BASE_URL}/Categories`)
       ]);
-
       const expenses = await expRes.json();
       const categories = await catRes.json();
-
       const categoryMap = {};
-      categories.forEach(c => {
-        const id = c.categoryId || c.id;
-        categoryMap[id] = c.icon || '🛒';
-      });
+      categories.forEach(c => categoryMap[c.categoryId || c.id] = c.icon || '🛒');
 
       tabContentEl.innerHTML = '';
       let totalNormalized = 0;
 
       if (expenses.length > 0) {
         const listContainer = document.createElement("div");
-        listContainer.className = "flex flex-col gap-3 pb-24"; // Padding bottom extra per il FAB
+        listContainer.className = "flex flex-col gap-3 pb-24"; 
 
         expenses.forEach((e) => {
-          const currentId = e.expanseId; 
           const amt = e.amount;
           const curr = e.currencyCode;
           let amountInMainCurrency = amt;
           let subText = "";
 
-          // Conversione
           if (curr === "EUR" && mainTravelCurrency !== "EUR" && currentExchangeRate) {
             amountInMainCurrency = amt / currentExchangeRate;
             subText = `≈ ${amountInMainCurrency.toFixed(2)} ${mainTravelCurrency}`;
@@ -170,17 +177,13 @@ document.addEventListener("DOMContentLoaded", () => {
           }
           totalNormalized += amountInMainCurrency;
 
-          // Date Formatting
           const dateObj = new Date(e.expanseDate);
           const day = dateObj.getDate();
           const month = dateObj.toLocaleString('it-IT', { month: 'short' }).replace('.', '').toUpperCase();
-
           const icon = categoryMap[e.categoryId] || '🧾';
 
-          // Card HTML
           const card = document.createElement("div");
           card.className = "bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden flex transition group";
-          
           card.innerHTML = `
             <div class="edit-area flex-grow p-4 flex items-center justify-between cursor-pointer hover:bg-gray-50 transition-colors">
                 <div class="flex items-center gap-4">
@@ -188,59 +191,38 @@ document.addEventListener("DOMContentLoaded", () => {
                     <span class="text-lg font-bold">${day}</span>
                     <span class="text-[9px] font-bold uppercase mt-[2px]">${month}</span>
                   </div>
-
                   <div class="overflow-hidden">
-                    <h3 class="font-bold text-gray-800 truncate text-base">
-                        <span class="mr-1">${icon}</span> ${e.name}
-                    </h3>
+                    <h3 class="font-bold text-gray-800 truncate text-base"><span class="mr-1">${icon}</span> ${e.name}</h3>
                     <p class="text-xs text-gray-500 truncate">${e.description || ""}</p>
                   </div>
                 </div>
-                
                 <div class="text-right pl-2 shrink-0">
                   <span class="block font-bold text-gray-900 text-lg whitespace-nowrap">${amt.toFixed(2)} <span class="text-sm">${curr}</span></span>
                   <span class="block text-[10px] text-gray-400 font-medium whitespace-nowrap">${subText}</span>
                 </div>
             </div>
-
             <div class="w-[1px] bg-gray-100 my-2"></div>
-
-            <button class="delete-btn w-14 flex items-center justify-center !bg-transparent !border-0 !shadow-none hover:!bg-transparent focus:outline-none cursor-pointer shrink-0 group" title="Elimina">
-               <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-6 h-6 text-red-500 transition-transform duration-200 transform group-hover:scale-125">
-                  <path stroke-linecap="round" stroke-linejoin="round" d="m14.74 9-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 0 1-2.244 2.077H8.084a2.25 2.25 0 0 1-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 0 0-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 0 1 3.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 0 0-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 0 0-7.5 0" />
-                </svg>
+            <button class="delete-btn w-14 flex items-center justify-center !bg-transparent !border-0 !shadow-none hover:!bg-transparent focus:outline-none cursor-pointer shrink-0 group">
+               <span class="text-red-500 text-xl font-bold">🗑️</span>
             </button>
           `;
-
-          // Eventi Card
-          const deleteBtn = card.querySelector(".delete-btn");
-          deleteBtn.addEventListener("click", async (ev) => {
+          
+          card.querySelector(".delete-btn").addEventListener("click", async (ev) => {
             ev.stopPropagation(); 
-            if(confirm("Eliminare questa spesa?")) {
-               await deleteExpense(currentId);
-            }
+            if(confirm("Eliminare questa spesa?")) await deleteExpense(e.expanseId);
           });
-
-          const editArea = card.querySelector(".edit-area");
-          editArea.addEventListener("click", () => {
-             openEditForm(e);
-          });
-
+          card.querySelector(".edit-area").addEventListener("click", () => openEditForm(e));
           listContainer.appendChild(card);
         });
-
         tabContentEl.appendChild(listContainer);
-
-        // Aggiorna totali header
+        
         headerAmountEl.textContent = totalNormalized.toFixed(2);
         headerCurrencyEl.textContent = mainTravelCurrency;
         headerTotalSection.classList.remove("hidden");
-        
         if (currentExchangeRate && mainTravelCurrency !== "EUR") {
            headerTotalHomeEl.textContent = (totalNormalized * currentExchangeRate).toFixed(2);
            headerConvertedBox.classList.remove("hidden");
         }
-
       } else {
         headerAmountEl.textContent = "0.00";
         tabContentEl.innerHTML = `<div class="text-center mt-10 opacity-60">Nessuna spesa registrata.</div>`;
@@ -248,36 +230,26 @@ document.addEventListener("DOMContentLoaded", () => {
     } catch (err) { console.error(err); }
   }
 
-  // --- 5. LOGICA API DELETE ---
   async function deleteExpense(id) {
     if(!id) return;
     try {
       const res = await fetch(`${API_BASE_URL}/Expanses/${id}`, { method: 'DELETE' });
-      if (res.ok) {
-        renderExpensesList();
-      } else {
-        alert("Errore eliminazione");
-      }
+      if (res.ok) renderExpensesList();
+      else alert("Errore eliminazione");
     } catch (err) { console.error(err); }
   }
 
-  // --- 6. PREPARAZIONE FORM MODIFICA ---
   async function openEditForm(expense) {
     editingExpenseId = expense.expanseId; 
-    
-    // Resetta navigazione
-    navButtons.forEach((b) => b.classList.remove("active"));
-    
-    // Nascondi FAB manualmente poiché stiamo entrando in edit mode
     if (fabAddBtn) fabAddBtn.classList.add("hidden");
-
+    // Simuliamo cambio tab senza triggerare navigazione swipe
+    navButtons.forEach((b) => b.classList.remove("active"));
+    currentTab = "add"; 
     await renderAddExpense(expense); 
   }
 
-  // --- 7. FORM DINAMICO (Aggiungi/Modifica) ---
   async function renderAddExpense(expenseToEdit = null) {
     tabContentEl.innerHTML = `<div class="p-10 text-center animate-pulse">Caricamento modulo...</div>`;
-    
     try {
       const [catRes, travelRes] = await Promise.all([
         fetch(`${API_BASE_URL}/Categories`),
@@ -285,10 +257,9 @@ document.addEventListener("DOMContentLoaded", () => {
       ]);
       const categories = await catRes.json();
       const travel = await travelRes.json();
-
+      
       const title = expenseToEdit ? "Modifica Spesa" : "Nuova Spesa";
-      const btnText = expenseToEdit ? "Aggiorna Spesa" : "Salva Spesa";
-
+      const btnText = expenseToEdit ? "Aggiorna" : "Salva";
       const defName = expenseToEdit ? expenseToEdit.name : "";
       const defAmount = expenseToEdit ? expenseToEdit.amount : "";
       const defCatId = expenseToEdit ? expenseToEdit.categoryId : "";
@@ -298,12 +269,10 @@ document.addEventListener("DOMContentLoaded", () => {
         <div class="bg-white rounded-2xl shadow-sm p-6 mb-20 animate-fade-in">
           <h2 class="text-xl font-bold mb-6 text-gray-800">${title}</h2>
           <form id="expense-form" class="flex flex-col gap-5">
-            
             <div>
-              <label class="block text-xs font-bold text-gray-500 uppercase mb-1">Cosa hai comprato?</label>
-              <input name="name" value="${defName}" class="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 font-semibold focus:outline-none focus:ring-2 focus:ring-sky-400" required />
+              <label class="block text-xs font-bold text-gray-500 uppercase mb-1">Nome Spesa</label>
+              <input name="name" value="${defName}" class="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 font-semibold" required />
             </div>
-
             <div class="grid grid-cols-5 gap-4">
               <div class="col-span-3">
                 <label class="block text-xs font-bold text-gray-500 uppercase mb-1">Importo</label>
@@ -317,253 +286,201 @@ document.addEventListener("DOMContentLoaded", () => {
                 </select>
               </div>
             </div>
-
             <div>
               <label class="block text-xs font-bold text-gray-500 uppercase mb-1">Categoria</label>
               <select name="categoryId" class="w-full bg-white border border-gray-200 rounded-xl px-4 py-3" required>
                 <option value="" disabled ${!defCatId ? 'selected' : ''}>Seleziona...</option>
-                ${categories.map(c => `
-                    <option value="${c.categoryId || c.id}" ${defCatId === (c.categoryId || c.id) ? 'selected' : ''}>
-                        ${c.icon || ''} ${c.name}
-                    </option>`).join('')}
+                ${categories.map(c => `<option value="${c.categoryId || c.id}" ${defCatId === (c.categoryId || c.id) ? 'selected' : ''}>${c.icon || ''} ${c.name}</option>`).join('')}
               </select>
             </div>
-
             <button type="submit" class="bg-sky-500 text-white font-bold py-4 rounded-xl shadow-lg mt-4 active:scale-95 transition">${btnText}</button>
-            
             <button type="button" id="cancel-edit" class="text-gray-400 text-sm underline mt-2 w-full text-center">Annulla</button>
           </form>
         </div>`;
 
-      // SUBMIT
       document.getElementById("expense-form").addEventListener("submit", async (e) => {
         e.preventDefault();
         const fd = new FormData(e.target);
-        
         const payload = {
-          travelId,
-          categoryId: fd.get("categoryId"),
-          expanseDate: new Date().toISOString(),
-          name: fd.get("name"),
-          amount: Number(fd.get("amount")),
-          currencyCode: fd.get("currencyCode"),
-          description: ""
+          travelId, categoryId: fd.get("categoryId"), expanseDate: new Date().toISOString(),
+          name: fd.get("name"), amount: Number(fd.get("amount")), currencyCode: fd.get("currencyCode")
         };
-
         let url = `${API_BASE_URL}/Expanses`;
         let method = "POST";
-
-        if (editingExpenseId) {
-            method = "PUT";
-            url = `${API_BASE_URL}/Expanses/${editingExpenseId}`; 
-            payload.expanseId = editingExpenseId;
-        }
-
-        const res = await fetch(url, {
-          method: method,
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(payload),
-        });
-
-        if (res.ok) {
-          editingExpenseId = null; 
-          // Simuliamo click su 'list' per tornare indietro e riattivare il FAB
-          const listTab = document.querySelector('[data-tab="list"]');
-          if (listTab) listTab.click();
-        } else {
-            console.error(await res.text());
-            alert("Errore nel salvataggio");
-        }
+        if (editingExpenseId) { method = "PUT"; url += `/${editingExpenseId}`; payload.expanseId = editingExpenseId; }
+        
+        const res = await fetch(url, { method, headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload) });
+        if (res.ok) switchTab("list");
+        else alert("Errore salvataggio");
       });
-
-      // ANNULLA
-      const cancelBtn = document.getElementById("cancel-edit");
-      if(cancelBtn) {
-          cancelBtn.addEventListener("click", () => {
-              editingExpenseId = null;
-              // Simuliamo click su 'list'
-              const listTab = document.querySelector('[data-tab="list"]');
-              if (listTab) listTab.click();
-          });
-      }
-
+      document.getElementById("cancel-edit").addEventListener("click", () => switchTab("list"));
     } catch (err) { console.error(err); }
   }
 
-  // --- 8. GRAFICO (Versione Blindata & Debug) ---
   async function renderChart() {
-    console.log("--- INIZIO RENDER CHART ---"); 
     tabContentEl.innerHTML = `<div class="flex justify-center mt-10"><div class="animate-spin h-8 w-8 border-b-2 border-sky-500 rounded-full"></div></div>`;
-
     try {
       const [expRes, catRes] = await Promise.all([
         fetch(`${API_BASE_URL}/Expanses?travelId=${travelId}`),
         fetch(`${API_BASE_URL}/Categories`)
       ]);
-
-      if (!expRes.ok || !catRes.ok) throw new Error("Errore API nel recupero dati");
-
       const expenses = await expRes.json();
       const categories = await catRes.json();
 
-      console.log(`Spese trovate: ${expenses.length}`);
-
       if (expenses.length === 0) {
-        tabContentEl.innerHTML = `
-            <div class="text-center mt-20 opacity-60 flex flex-col items-center gap-4">
-                <div class="text-6xl">🍩</div>
-                <p class="font-medium text-gray-500">Nessuna spesa da analizzare.</p>
-            </div>`;
+        tabContentEl.innerHTML = `<div class="text-center mt-20 opacity-60"><div class="text-6xl">🍩</div><p>Nessun dato.</p></div>`;
         return;
       }
 
-      const fixedColors = {
-        "Cibo e bevande": "#f97316",
-        "Trasporti locali": "#06b6d4",
-        "Alloggio": "#8b5cf6",
-        "Voli": "#1d4ed8",
-        "Souvenir e shopping": "#ec4899",
-        "Altro": "#9ca3af"
-      };
-      
+      const fixedColors = { "Cibo e bevande": "#f97316", "Trasporti locali": "#06b6d4", "Alloggio": "#8b5cf6", "Voli": "#1d4ed8", "Souvenir e shopping": "#ec4899", "Altro": "#9ca3af" };
       const fallbackPalette = ["#eab308", "#10b981", "#6366f1", "#f43f5e"];
-
       const catMap = {};
       let fallbackIndex = 0;
-
       categories.forEach(c => {
-        const cName = c.name || c.Name || "Sconosciuto";
-        const cId = c.categoryId || c.CategoryId || c.id || c.Id;
-        const cIcon = c.icon || c.Icon || "📦";
-
-        let color = fixedColors[cName];
-        if (!color) {
-            color = fallbackPalette[fallbackIndex % fallbackPalette.length];
-            fallbackIndex++;
-        }
-        if (cId) catMap[cId] = { name: cName, color: color, icon: cIcon };
+         const name = c.name || c.Name || "Unknown";
+         let color = fixedColors[name] || fallbackPalette[fallbackIndex++ % fallbackPalette.length];
+         catMap[c.categoryId || c.id] = { name, color, icon: c.icon || "📦" };
       });
 
       const groupedData = {};
-      let totalChartAmount = 0;
+      let total = 0;
+      const safeRate = (currentExchangeRate > 0) ? currentExchangeRate : 1;
       
-      const safeRate = (currentExchangeRate && !isNaN(currentExchangeRate) && currentExchangeRate > 0) ? currentExchangeRate : 1;
-
-      console.log(`Valuta Viaggio: ${mainTravelCurrency}, Tasso usato: ${safeRate}`);
-
       expenses.forEach(e => {
-        const eCatId = e.categoryId || e.CategoryId;
-        const catInfo = catMap[eCatId] || { name: "Altro", color: "#9ca3af", icon: "❓" };
-        const catKey = catInfo.name; 
-
-        let rawAmount = Number(e.amount);
-        if (isNaN(rawAmount)) rawAmount = 0;
-
-        let normalizedAmount = rawAmount;
-        if (e.currencyCode === "EUR" && mainTravelCurrency !== "EUR") {
-            normalizedAmount = rawAmount / safeRate;
-        } else if (e.currencyCode !== mainTravelCurrency && e.currencyCode !== "EUR") {
-            console.warn(`Valuta non gestita: ${e.currencyCode}`);
-        }
-        
-        if (!isFinite(normalizedAmount)) normalizedAmount = 0;
-
-        if (!groupedData[catKey]) {
-            groupedData[catKey] = { amount: 0, color: catInfo.color, icon: catInfo.icon };
-        }
-        groupedData[catKey].amount += normalizedAmount;
-        totalChartAmount += normalizedAmount;
+         const cat = catMap[e.categoryId] || { name: "Altro", color: "#ccc", icon: "?" };
+         let val = Number(e.amount) || 0;
+         if (e.currencyCode === "EUR" && mainTravelCurrency !== "EUR") val /= safeRate;
+         if (!groupedData[cat.name]) groupedData[cat.name] = { amount: 0, color: cat.color, icon: cat.icon };
+         groupedData[cat.name].amount += val;
+         total += val;
       });
 
-      const labels = Object.keys(groupedData).sort((a, b) => groupedData[b].amount - groupedData[a].amount);
+      const labels = Object.keys(groupedData).sort((a,b) => groupedData[b].amount - groupedData[a].amount);
       const dataValues = labels.map(k => groupedData[k].amount);
-      const backgroundColors = labels.map(k => groupedData[k].color);
+      const colors = labels.map(k => groupedData[k].color);
 
       tabContentEl.innerHTML = `
-        <div class="bg-white rounded-2xl shadow-sm p-6 mb-24 border border-gray-100 animate-fade-in">
-            <h2 class="text-lg font-bold text-gray-800 mb-6 text-center">Analisi Spese (${mainTravelCurrency})</h2>
-            
-            <div class="relative w-full max-w-[260px] mx-auto aspect-square mb-8">
+        <div class="bg-white rounded-2xl shadow-sm p-6 mb-24 border border-gray-100">
+            <h2 class="text-lg font-bold text-center mb-6">Spese (${mainTravelCurrency})</h2>
+            <div class="relative w-full max-w-[250px] mx-auto aspect-square mb-6">
                 <canvas id="expenseChart"></canvas>
                 <div class="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
-                    <span class="text-xs text-gray-400 font-semibold uppercase tracking-widest">Totale</span>
-                    <span class="text-2xl font-black text-gray-800">${totalChartAmount.toLocaleString('it-IT', { maximumFractionDigits: 0 })}</span>
-                    <span class="text-[10px] text-gray-400 font-bold bg-gray-100 px-1.5 py-0.5 rounded">${mainTravelCurrency}</span>
+                    <span class="text-xs text-gray-400 font-semibold uppercase">Totale</span>
+                    <span class="text-xl font-black text-gray-800">${total.toLocaleString('it-IT', {maximumFractionDigits:0})}</span>
                 </div>
             </div>
-
-            <div class="flex flex-col gap-3">
-                ${labels.map((label) => {
-                    const item = groupedData[label];
-                    const percentage = (totalChartAmount > 0) ? ((item.amount / totalChartAmount) * 100).toFixed(1) : "0.0";
-                    return `
-                    <div class="flex items-center justify-between p-3 hover:bg-gray-50 rounded-xl transition-colors border border-transparent hover:border-gray-100">
-                        <div class="flex items-center gap-3">
-                            <div class="w-10 h-10 rounded-full flex items-center justify-center text-lg shadow-sm shrink-0" style="background-color: ${item.color}20; color: ${item.color}">
-                                ${item.icon}
-                            </div>
-                            <div class="flex flex-col">
-                                <span class="text-sm font-bold text-gray-700">${label}</span>
-                                <div class="flex items-center gap-2">
-                                     <div class="w-16 h-1.5 bg-gray-100 rounded-full overflow-hidden">
-                                        <div class="h-full rounded-full" style="width: ${percentage}%; background-color: ${item.color}"></div>
-                                     </div>
-                                     <span class="text-[10px] text-gray-400 font-bold">${percentage}%</span>
-                                </div>
-                            </div>
+            <div class="flex flex-col gap-2">
+                ${labels.map(l => {
+                    const item = groupedData[l];
+                    const pct = total > 0 ? ((item.amount/total)*100).toFixed(1) : 0;
+                    return `<div class="flex justify-between items-center p-2 rounded hover:bg-gray-50">
+                        <div class="flex items-center gap-2">
+                            <span style="color:${item.color}">${item.icon}</span>
+                            <span class="text-sm font-bold text-gray-700">${l}</span>
                         </div>
                         <div class="text-right">
-                            <div class="text-sm font-bold text-gray-900">${item.amount.toLocaleString('it-IT', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</div>
-                            <div class="text-[10px] text-gray-400 font-medium">${mainTravelCurrency}</div>
+                             <span class="block text-sm font-bold">${item.amount.toLocaleString('it-IT',{maximumFractionDigits:0})}</span>
+                             <span class="text-[10px] text-gray-400">${pct}%</span>
                         </div>
-                    </div>
-                    `;
+                    </div>`;
                 }).join('')}
             </div>
-        </div>
-      `;
+        </div>`;
 
-      const canvas = document.getElementById('expenseChart');
-      if (canvas) {
-          const ctx = canvas.getContext('2d');
-          new Chart(ctx, {
-            type: 'doughnut',
-            data: {
-              labels: labels,
-              datasets: [{
-                data: dataValues,
-                backgroundColor: backgroundColors,
-                borderWidth: 0, 
-                hoverOffset: 4, 
-                borderRadius: 20, 
-                spacing: 5,       
-                cutout: '75%'     
-              }]
-            },
-            options: {
-              responsive: true,
-              maintainAspectRatio: false,
-              plugins: {
-                legend: { display: false }, 
-                tooltip: {
-                    backgroundColor: 'rgba(255, 255, 255, 0.95)',
-                    titleColor: '#111827',
-                    bodyColor: '#374151',
-                    callbacks: {
-                        label: function(context) {
-                            return ` ${context.parsed.toLocaleString('it-IT', { minimumFractionDigits: 2 })} ${mainTravelCurrency}`;
-                        }
-                    }
-                }
-              }
-            }
-          });
+      const ctx = document.getElementById('expenseChart').getContext('2d');
+      new Chart(ctx, {
+        type: 'doughnut',
+        data: { labels, datasets: [{ data: dataValues, backgroundColor: colors, borderWidth:0, cutout:'75%', borderRadius:15 }] },
+        options: { responsive:true, plugins:{ legend:{display:false} } }
+      });
+    } catch (err) { console.error(err); }
+  }
+
+  // === 5. GESTIONE SWIPE (Touch & Mouse) ===
+  let touchStartX = 0;
+  let touchStartY = 0;
+  let touchEndX = 0;
+  let touchEndY = 0;
+
+  // Mouse e Touch Events
+  const container = document.body; // Ascoltiamo su tutto il body per sicurezza
+
+  // Touch Starts
+  container.addEventListener('touchstart', e => {
+      touchStartX = e.changedTouches[0].screenX;
+      touchStartY = e.changedTouches[0].screenY;
+  }, {passive: true});
+
+  // Mouse Down (per simulare swipe col mouse)
+  container.addEventListener('mousedown', e => {
+      touchStartX = e.screenX;
+      touchStartY = e.screenY;
+  });
+
+  // Touch Ends
+  container.addEventListener('touchend', e => {
+      touchEndX = e.changedTouches[0].screenX;
+      touchEndY = e.changedTouches[0].screenY;
+      handleSwipeGesture();
+  }, {passive: true});
+
+  // Mouse Up
+  container.addEventListener('mouseup', e => {
+      touchEndX = e.screenX;
+      touchEndY = e.screenY;
+      handleSwipeGesture();
+  });
+
+  function handleSwipeGesture() {
+      // 1. BLOCCHI ECCEZIONALI
+      // Non swipare se siamo nel tab "add" (form)
+      if (currentTab === "add") return;
+      
+      // Calcolo differenze
+      const diffX = touchEndX - touchStartX;
+      const diffY = touchEndY - touchStartY;
+
+      // 2. LOGICA: È uno swipe orizzontale o uno scroll verticale?
+      // Se lo spostamento verticale è maggiore di quello orizzontale, è uno scroll. Ignora.
+      if (Math.abs(diffX) < Math.abs(diffY)) return;
+
+      // 3. SOGLIA MINIMA: Il movimento deve essere almeno di 50px per contare
+      if (Math.abs(diffX) < 50) return;
+
+      // 4. DIREZIONE
+      if (diffX > 0) {
+          // Swipe verso DESTRA (->) : Vai al tab precedente
+          navigateTabs("prev");
+      } else {
+          // Swipe verso SINISTRA (<-) : Vai al tab successivo
+          navigateTabs("next");
+      }
+  }
+
+  function navigateTabs(direction) {
+      const currentIndex = tabOrder.indexOf(currentTab);
+      if (currentIndex === -1) return; // Tab corrente non è nella lista swipeable
+
+      let newIndex = currentIndex;
+      if (direction === "next") {
+          newIndex = currentIndex + 1;
+      } else {
+          newIndex = currentIndex - 1;
       }
 
-    } catch (err) {
-      console.error("ERRORE CRITICO GRAFICO:", err);
-      tabContentEl.innerHTML = `<div class="p-6 text-center"><p class="text-red-500 font-bold mb-2">Errore nel grafico</p><p class="text-xs text-gray-500 bg-gray-100 p-2 rounded">${err.message}</p></div>`;
-    }
+      // Controllo limiti (non andare oltre l'ultimo o prima del primo)
+      if (newIndex >= 0 && newIndex < tabOrder.length) {
+          const newTab = tabOrder[newIndex];
+          
+          // Aggiungiamo classe animazione in base alla direzione
+          if (direction === "next") {
+             tabContentEl.classList.add("animate-slide-left");
+          } else {
+             tabContentEl.classList.add("animate-slide-right");
+          }
+          
+          switchTab(newTab);
+      }
   }
 
   loadTravelHeader();
