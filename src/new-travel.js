@@ -2,14 +2,13 @@ import { API_BASE_URL } from "./config.js";
 
 const API_URL = `${API_BASE_URL}/Travels`;
 
-// Valute (Lista abbreviata per leggibilità, tieni la tua completa)
 const CURRENCIES = [
   { code: 'EUR', name: 'Euro', flag: '🇪🇺' },
   { code: 'GBP', name: 'Sterlina britannica', flag: '🇬🇧' },
   { code: 'CHF', name: 'Franco svizzero', flag: '🇨🇭' },
   { code: 'USD', name: 'Dollaro statunitense', flag: '🇺🇸' },
   { code: 'JPY', name: 'Yen giapponese', flag: '🇯🇵' },
-  { code: 'MAD', name: 'Dirham marocchino', flag: '🇲🇦' },
+  { code: 'MAD', name: 'Dirham Marocchino', flag: '🇲🇦' },
   { code: 'AUD', name: 'Dollaro australiano', flag: '🇦🇺' }
 ];
 
@@ -23,22 +22,22 @@ document.addEventListener('DOMContentLoaded', () => {
   const currencyCodeInput = document.getElementById('travelCurrencyCode');
   const currencyDropdown = document.getElementById('travelCurrencyDropdown');
 
-  // Navigazione
   const goHome = () => window.location.href = '/index.html';
   if(backBtn) backBtn.addEventListener('click', goHome);
   if(cancelBtn) cancelBtn.addEventListener('click', goHome);
 
-  // === 📅 INIZIALIZZAZIONE CALENDARI (Flatpickr) ===
+  // === 📅 INIZIALIZZAZIONE CALENDARI (Corretta per non scrivere) ===
   
   // 1. Data Fine
   const endDatePicker = flatpickr("#endDate", {
     locale: "it",
     dateFormat: "Y-m-d",   
     altInput: true,        
-    altFormat: "j F Y",    // Visualizza: 15 Agosto 2024
+    altFormat: "j M Y",    
     minDate: "today",
-    disableMobile: "true",
-    allowInput: true       
+    disableMobile: true,    // IMPORTANTE: Forza l'uso di flatpickr anche su mobile
+    allowInput: false,      // IMPORTANTE: Impedisce la scrittura manuale
+    clickOpens: true
   });
 
   // 2. Data Inizio
@@ -46,20 +45,17 @@ document.addEventListener('DOMContentLoaded', () => {
     locale: "it",
     dateFormat: "Y-m-d",   
     altInput: true,        
-    altFormat: "j F Y",    
+    altFormat: "j M Y",    
     minDate: "today",
-    disableMobile: "true",
-    allowInput: true,
+    disableMobile: true,    // IMPORTANTE
+    allowInput: false,      // IMPORTANTE
+    clickOpens: true,
     onChange: function(selectedDates, dateStr, instance) {
-        // Logica Booking: imposta la data minima di fine
         endDatePicker.set('minDate', dateStr);
-        
         const endDateVal = endDatePicker.selectedDates[0];
         if (endDateVal && endDateVal < selectedDates[0]) {
             endDatePicker.clear();
         }
-        
-        // Apre automaticamente il calendario di fine
         setTimeout(() => endDatePicker.open(), 100); 
     }
   });
@@ -127,18 +123,14 @@ document.addEventListener('DOMContentLoaded', () => {
   function showDropdown() { currencyDropdown.classList.remove('hidden'); }
   function hideDropdown() { currencyDropdown.classList.add('hidden'); }
 
-
   // === SUBMIT ===
   form.addEventListener('submit', async (event) => {
     event.preventDefault();
     hideError();
 
     const name = document.getElementById('name').value.trim();
-    
-    // Flatpickr aggiorna automaticamente il "value" dell'input originale nascosto
     const startDate = document.getElementById('startDate').value;
     const endDate = document.getElementById('endDate').value;
-    
     const homeCurrencyCode = 'EUR'; 
     let travelCurrencyCode = currencyCodeInput.value;
     
@@ -177,9 +169,7 @@ document.addEventListener('DOMContentLoaded', () => {
         showError(message);
         return;
       }
-
       window.location.href = '/index.html';
-      
     } catch (err) {
       console.error(err);
       showError('Errore di connessione.');

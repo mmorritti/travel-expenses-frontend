@@ -9,7 +9,7 @@
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
     <link rel="stylesheet" href="https://npmcdn.com/flatpickr/dist/themes/airbnb.css">
     
-    <link rel="stylesheet" href="/src/style.css" />
+    <link rel="stylesheet" href="/src/style.css?v=2" />
   </head>
   <body class="bg-gray-50 min-h-screen flex flex-col antialiased">
 
@@ -45,8 +45,9 @@
             <input
               type="text"
               id="startDate"
-              class="w-full bg-white border border-gray-200 rounded-xl px-4 py-3 font-semibold text-sm focus:outline-none focus:ring-2 focus:ring-sky-400 cursor-pointer"
+              class="w-full bg-white border border-gray-200 rounded-xl px-4 py-3 font-semibold text-sm focus:outline-none focus:ring-2 focus:ring-sky-400 cursor-pointer caret-transparent"
               placeholder="Seleziona..."
+              readonly="readonly" 
               required
             />
             <div class="absolute right-3 top-[34px] pointer-events-none text-gray-400">📅</div>
@@ -56,8 +57,9 @@
             <input
               type="text"
               id="endDate"
-              class="w-full bg-white border border-gray-200 rounded-xl px-4 py-3 font-semibold text-sm focus:outline-none focus:ring-2 focus:ring-sky-400 cursor-pointer"
+              class="w-full bg-white border border-gray-200 rounded-xl px-4 py-3 font-semibold text-sm focus:outline-none focus:ring-2 focus:ring-sky-400 cursor-pointer caret-transparent"
               placeholder="Seleziona..."
+              readonly="readonly"
               required
             />
              <div class="absolute right-3 top-[34px] pointer-events-none text-gray-400">📅</div>
@@ -66,7 +68,6 @@
 
         <div class="relative flex flex-col gap-1">
           <label class="text-xs font-bold text-gray-500 uppercase mb-1">Valuta Locale</label>
-          
           <input
             type="text"
             id="travelCurrencySearch"
@@ -74,32 +75,15 @@
             placeholder="Cerca valuta (es. USD...)"
             autocomplete="off"
           />
-          
           <input type="hidden" id="travelCurrencyCode" />
-
-          <div
-            id="travelCurrencyDropdown"
-            class="absolute top-full left-0 right-0 mt-1 bg-white border border-gray-200 rounded-xl shadow-xl max-h-60 overflow-y-auto hidden z-[60]"
-          >
-            </div>
+          <div id="travelCurrencyDropdown" class="absolute top-full left-0 right-0 mt-1 bg-white border border-gray-200 rounded-xl shadow-xl max-h-60 overflow-y-auto hidden z-[60]"></div>
         </div>
 
         <div id="error-box" class="hidden bg-red-50 text-red-600 p-4 rounded-xl text-sm border border-red-100 font-medium"></div>
 
         <div class="flex gap-4 mt-4">
-          <button
-            type="button"
-            id="cancel-btn"
-            class="flex-1 py-4 rounded-xl border border-gray-200 font-bold text-gray-500 hover:bg-gray-50 transition active:scale-95"
-          >
-            Annulla
-          </button>
-          <button
-            type="submit"
-            class="flex-1 py-4 rounded-xl bg-sky-500 text-white font-bold hover:bg-sky-600 shadow-lg transition active:scale-95"
-          >
-            Crea Viaggio
-          </button>
+          <button type="button" id="cancel-btn" class="flex-1 py-4 rounded-xl border border-gray-200 font-bold text-gray-500 hover:bg-gray-50 transition active:scale-95">Annulla</button>
+          <button type="submit" class="flex-1 py-4 rounded-xl bg-sky-500 text-white font-bold hover:bg-sky-600 shadow-lg transition active:scale-95">Crea Viaggio</button>
         </div>
       </form>
     </main>
@@ -107,6 +91,6 @@
     <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
     <script src="https://npmcdn.com/flatpickr/dist/l10n/it.js"></script>
 
-    <script type="module" src="/src/new-travel.js"></script>
+    <script type="module" src="/src/new-travel.js?v=2"></script>
   </body>
 </html>

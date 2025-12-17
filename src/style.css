@@ -418,3 +418,13 @@ button:focus-visible {
 .animate-slide-left {
   animation: slideInLeft 0.2s ease-out forwards;
 }
+
+/* Rimuove le frecce (spinners) dagli input numerici */
+input[type=number]::-webkit-inner-spin-button, 
+input[type=number]::-webkit-outer-spin-button { 
+  -webkit-appearance: none; 
+  margin: 0; 
+}
+input[type=number] {
+  -moz-appearance: textfield; /* Per Firefox */
+}
