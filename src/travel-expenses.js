@@ -34,15 +34,6 @@ document.addEventListener("DOMContentLoaded", () => {
   let currentTab = "list"; 
   const tabOrder = ["list", "chart", "fx"]; 
 
-  // --- INIEZIONE CSS FORCE (Per rimuovere frecce input ovunque) ---
-  const style = document.createElement('style');
-  style.innerHTML = `
-    input[type=number]::-webkit-inner-spin-button, 
-    input[type=number]::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
-    input[type=number] { -moz-appearance: textfield; }
-  `;
-  document.head.appendChild(style);
-
   // --- 1. SETUP NAVIGAZIONE ---
   if (backBtn) {
     backBtn.addEventListener("click", () => window.location.href = "/index.html");
@@ -71,11 +62,17 @@ document.addEventListener("DOMContentLoaded", () => {
 
   // --- 2. GESTIONE TAB ---
   async function renderTab(tab) {
+    // --- FIX VISIBILITÀ TASTO + (FAB) ---
+    // Deve essere visibile SOLO nella lista ("list")
     if (fabAddBtn) {
-        if (tab === "add") fabAddBtn.classList.add("hidden");
-        else fabAddBtn.classList.remove("hidden");
+        if (tab === "list") {
+            fabAddBtn.classList.remove("hidden");
+        } else {
+            fabAddBtn.classList.add("hidden");
+        }
     }
 
+    // Reset animazioni
     tabContentEl.classList.remove("animate-slide-right", "animate-slide-left", "animate-fade-in");
     void tabContentEl.offsetWidth; 
     tabContentEl.classList.add("animate-fade-in");
@@ -92,15 +89,15 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   }
 
- // --- PAGINA CAMBIO (FX) - VERSIONE FINALE CON SWAP ---
+  // --- 3. PAGINA CAMBIO (FX) - MINIMALISTA ---
   function renderFxPage() {
-      // 1. RECUPERO IL TASSO PURO
+      // 1. RECUPERO IL TASSO
       let rate = currentExchangeRate; 
       if (!rate || rate <= 0) rate = 1;
 
-      console.log(`FX Debug -> Rate Diretto: ${rate}`);
+      console.log(`FX Debug -> Rate: ${rate}`);
 
-      // 2. CSS NO SPINNER
+      // 2. CSS PER RIMUOVERE FRECCE (Spinners)
       const noSpinnerStyle = `
         <style>
             .no-spinner::-webkit-inner-spin-button, 
@@ -119,9 +116,9 @@ document.addEventListener("DOMContentLoaded", () => {
         <div class="p-6 animate-fade-in max-w-md mx-auto">
             <h2 class="text-lg font-bold text-gray-800 mb-8 text-center">Convertitore Rapido</h2>
             
-            <div class="bg-white rounded-3xl shadow-lg border border-gray-100 overflow-visible relative">
+            <div class="bg-white rounded-3xl shadow-lg border border-gray-100 overflow-hidden">
                 
-                <div class="p-6 border-b border-gray-100 bg-sky-50 rounded-t-3xl transition-colors relative z-0">
+                <div class="p-6 border-b border-gray-100 bg-sky-50 transition-colors">
                     <label class="block text-xs font-bold text-sky-800 uppercase mb-2">
                         ${mainTravelCurrency} (Locale)
                     </label>
@@ -132,15 +129,7 @@ document.addEventListener("DOMContentLoaded", () => {
                     </div>
                 </div>
 
-                <div class="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 z-20">
-                    <button id="btn-swap" type="button" class="bg-white border-2 border-gray-100 p-2 rounded-full shadow-md text-sky-500 hover:scale-110 hover:shadow-lg active:scale-95 transition-all cursor-pointer flex items-center justify-center">
-                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor" class="w-6 h-6 transition-transform duration-300">
-                            <path stroke-linecap="round" stroke-linejoin="round" d="M3 7.5L7.5 3m0 0L12 7.5M7.5 3v13.5m13.5 0L16.5 21m0 0L12 16.5m4.5 4.5V7.5" />
-                        </svg>
-                    </button>
-                </div>
-
-                <div class="p-6 bg-white rounded-b-3xl transition-colors relative z-0">
+                <div class="p-6 bg-white transition-colors">
                     <label class="block text-xs font-bold text-gray-400 uppercase mb-2">
                         EUR (Casa)
                     </label>
@@ -162,61 +151,24 @@ document.addEventListener("DOMContentLoaded", () => {
 
       const elLocal = document.getElementById("inp-local");
       const elHome = document.getElementById("inp-home");
-      const btnSwap = document.getElementById("btn-swap");
 
-      // --- LOGICA DI CALCOLO ---
-      const calcToEuro = () => {
+      // Scrivo LOCALE -> Calcola EURO
+      elLocal.addEventListener("input", () => {
           const val = parseFloat(elLocal.value);
           if (isNaN(val)) { elHome.value = ""; return; }
           elHome.value = (val * rate).toFixed(2);
-      };
+      });
 
-      const calcToLocal = () => {
+      // Scrivo EURO -> Calcola LOCALE
+      elHome.addEventListener("input", () => {
           const val = parseFloat(elHome.value);
           if (isNaN(val)) { elLocal.value = ""; return; }
           elLocal.value = (val / rate).toFixed(2);
-      };
-
-      // Listener Input
-      elLocal.addEventListener("input", calcToEuro);
-      elHome.addEventListener("input", calcToLocal);
-
-      // --- LOGICA SWAP ---
-      btnSwap.addEventListener("click", () => {
-          // 1. Animazione icona
-          const icon = btnSwap.querySelector("svg");
-          icon.classList.add("rotate-180");
-          setTimeout(() => icon.classList.remove("rotate-180"), 300);
-
-          // 2. Scambio Valori
-          // Se l'utente ha scritto in Euro (sotto), spostiamo quel valore sopra (in Locale)
-          // Se l'utente ha scritto in Locale (sopra), spostiamo quel valore sotto (in Euro)
-          
-          const valHome = parseFloat(elHome.value);
-          const valLocal = parseFloat(elLocal.value);
-
-          // Logica di priorità: Se c'è un valore in Home e stiamo "invertendo", 
-          // assumiamo che l'utente voglia convertire QUELLA cifra nell'altra valuta.
-          
-          if (!isNaN(valHome) && (isNaN(valLocal) || document.activeElement === elHome)) {
-              // Sposta DA SOTTO A SOPRA
-              elLocal.value = valHome;
-              elHome.value = ""; // Pulisci destinazione
-              calcToEuro(); // Ricalcola subito
-              elLocal.focus();
-          } 
-          else if (!isNaN(valLocal)) {
-              // Sposta DA SOPRA A SOTTO
-              elHome.value = valLocal;
-              elLocal.value = ""; // Pulisci destinazione
-              calcToLocal(); // Ricalcola subito
-              elHome.focus();
-          }
       });
 
       // Blocca tasti negativi
       const blockNegativeKeys = (e) => {
-          if (["-", "e", "E"].includes(e.key)) e.preventDefault();
+          if (["-", "e", "E", "+"].includes(e.key)) e.preventDefault();
       };
       elLocal.addEventListener("keydown", blockNegativeKeys);
       elHome.addEventListener("keydown", blockNegativeKeys);
@@ -333,9 +285,7 @@ document.addEventListener("DOMContentLoaded", () => {
             </div>
             <div class="w-[1px] bg-gray-100 my-2"></div>
             <button class="delete-btn w-14 flex items-center justify-center !bg-transparent !border-0 !shadow-none hover:!bg-transparent focus:outline-none cursor-pointer shrink-0 group">
-               <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-6 h-6 text-red-500 transition-transform duration-200 transform group-hover:scale-125">
-                  <path stroke-linecap="round" stroke-linejoin="round" d="m14.74 9-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 0 1-2.244 2.077H8.084a2.25 2.25 0 0 1-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 0 0-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 0 1 3.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 0 0-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 0 0-7.5 0" />
-                </svg>
+               <span class="text-red-500 text-xl font-bold">🗑️</span>
             </button>
           `;
 
@@ -384,8 +334,10 @@ document.addEventListener("DOMContentLoaded", () => {
   // --- 7. EDIT/ADD FORM ---
   async function openEditForm(expense) {
     editingExpenseId = expense.expanseId; 
-    if (fabAddBtn) fabAddBtn.classList.add("hidden");
+    
+    // Reset navbar
     navButtons.forEach((b) => b.classList.remove("active"));
+    
     currentTab = "add"; 
     await renderAddExpense(expense); 
   }
