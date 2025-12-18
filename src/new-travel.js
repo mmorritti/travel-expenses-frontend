@@ -22,6 +22,26 @@ document.addEventListener('DOMContentLoaded', () => {
   const currencyCodeInput = document.getElementById('travelCurrencyCode');
   const currencyDropdown = document.getElementById('travelCurrencyDropdown');
 
+  // --- LOGICA CONTATORE CARATTERI (CORRETTA) ---
+  const nameInput = document.getElementById('name');
+  const countSpan = document.getElementById('char-count');
+
+  if (nameInput && countSpan) {
+      nameInput.addEventListener('input', () => {
+          const len = nameInput.value.length;
+          countSpan.textContent = `${len}/50`;
+
+          // Cambio colore se superi i 45 caratteri
+          if (len >= 45) {
+              countSpan.classList.remove('text-gray-400');
+              countSpan.classList.add('text-orange-500');
+          } else {
+              countSpan.classList.add('text-gray-400');
+              countSpan.classList.remove('text-orange-500');
+          }
+      });
+  } // <--- MANCAVA QUESTA GRAFFA DI CHIUSURA!
+
   const goHome = () => window.location.href = '/index.html';
   if(backBtn) backBtn.addEventListener('click', goHome);
   if(cancelBtn) cancelBtn.addEventListener('click', goHome);

@@ -261,31 +261,36 @@ document.addEventListener("DOMContentLoaded", () => {
           const month = dateObj.toLocaleString('it-IT', { month: 'short' }).replace('.', '').toUpperCase();
           const icon = categoryMap[e.categoryId] || '🧾';
 
+         // Card HTML
           const card = document.createElement("div");
           card.className = "bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden flex transition group";
           
           card.innerHTML = `
-            <div class="edit-area flex-grow p-4 flex items-center justify-between cursor-pointer hover:bg-gray-50 transition-colors">
-                <div class="flex items-center gap-4">
+            <div class="edit-area flex-grow p-4 flex items-center justify-between cursor-pointer hover:bg-gray-50 transition-colors overflow-hidden">
+                
+                <div class="flex items-center gap-4 flex-1 w-0">
+                
                   <div class="bg-gray-50 rounded-lg w-12 h-12 flex flex-col items-center justify-center text-sky-600 border border-gray-100 shrink-0 leading-none">
                     <span class="text-lg font-bold">${day}</span>
                     <span class="text-[9px] font-bold uppercase mt-[2px]">${month}</span>
                   </div>
-                  <div class="overflow-hidden">
-                    <h3 class="font-bold text-gray-800 truncate text-base">
-                        <span class="mr-1">${icon}</span> ${e.name}
-                    </h3>
-                    <p class="text-xs text-gray-500 truncate">${e.description || ""}</p>
+
+                  <div class="flex flex-col flex-1 w-0">
+                    <h3 class="font-bold text-gray-800 text-base truncate block">${e.name}</h3>
+                    <p class="text-xs text-gray-500 truncate block">${e.description || ""}</p>
                   </div>
                 </div>
-                <div class="text-right pl-2 shrink-0">
+                
+                <div class="text-right pl-3 shrink-0">
                   <span class="block font-bold text-gray-900 text-lg whitespace-nowrap">${amt.toFixed(2)} <span class="text-sm">${curr}</span></span>
                   <span class="block text-[10px] text-gray-400 font-medium whitespace-nowrap">${subText}</span>
                 </div>
             </div>
+
             <div class="w-[1px] bg-gray-100 my-2"></div>
-            <button class="delete-btn w-14 flex items-center justify-center !bg-transparent !border-0 !shadow-none hover:!bg-transparent focus:outline-none cursor-pointer shrink-0 group">
-               <span class="text-red-500 text-xl font-bold">🗑️</span>
+
+            <button class="delete-btn w-14 flex items-center justify-center !bg-transparent !border-0 !shadow-none hover:!bg-transparent focus:outline-none cursor-pointer shrink-0 group" title="Elimina">
+               <span class="text-red-500 text-xl font-bold transition-transform group-hover:scale-110">🗑️</span>
             </button>
           `;
 
