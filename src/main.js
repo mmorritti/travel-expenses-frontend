@@ -1,8 +1,12 @@
 import { API_BASE_URL } from "./config.js";
+import { initGoogleAuth } from "./auth.js";
+
 
 document.addEventListener("DOMContentLoaded", () => {
+
+  initGoogleAuth();
+
   const travelList = document.getElementById('travels-list');
-  
   if (!travelList) {
     console.error("ERRORE: Elemento 'travels-list' non trovato.");
     return;

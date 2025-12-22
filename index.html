@@ -8,11 +8,18 @@
       
       <script src="https://cdn.tailwindcss.com"></script>
       <link rel="stylesheet" href="/src/style.css" />
+      <script src="https://accounts.google.com/gsi/client" async defer></script>
     </head>
 
 
 
   <body class="bg-gray-50 min-h-screen flex flex-col font-sans">
+    
+<div id="auth-section" style="padding: 1rem; text-align: right;">
+        <div id="google-button-container"></div>
+        <div id="user-info" style="display: none;"></div>
+    </div>
+
     
     <div class="sticky top-0 z-50 bg-sky-300 shadow-md">
       <header class="bg-sky-300 pt-8 pb-6 px-6 rounded-b-[2rem] shadow-sm z-20 flex-shrink-0 relative">
