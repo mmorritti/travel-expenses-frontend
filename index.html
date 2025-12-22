@@ -1,51 +1,61 @@
 <!DOCTYPE html>
 <html lang="it">
-
-    <head>
-      <meta charset="UTF-8" />
-      <title>I Miei Viaggi</title>
-      <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-      
-      <script src="https://cdn.tailwindcss.com"></script>
-      <link rel="stylesheet" href="/src/style.css" />
-      <script src="https://accounts.google.com/gsi/client" async defer></script>
-    </head>
-
-
+  <head>
+    <meta charset="UTF-8" />
+    <title>I Miei Viaggi</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+    
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://accounts.google.com/gsi/client" async defer></script>
+    <link rel="stylesheet" href="/src/style.css" />
+  </head>
 
   <body class="bg-gray-50 min-h-screen flex flex-col font-sans">
-    
-<div id="auth-section" style="padding: 1rem; text-align: right;">
-        <div id="google-button-container"></div>
-        <div id="user-info" style="display: none;"></div>
+
+    <div id="login-view" class="fixed inset-0 z-50 bg-gray-50 flex flex-col items-center justify-center p-4">
+        <div class="bg-white p-8 rounded-2xl shadow-xl text-center max-w-sm w-full border border-gray-100">
+            <h1 class="text-2xl font-bold text-slate-900 mb-2">Benvenuto</h1>
+            <p class="text-slate-600 mb-8 text-sm">Accedi per monitorare le tue spese di viaggio</p>
+            
+            <div id="google-button-container" class="flex justify-center h-[44px]"></div>
+        </div>
     </div>
 
-    
-    <div class="sticky top-0 z-50 bg-sky-300 shadow-md">
-      <header class="bg-sky-300 pt-8 pb-6 px-6 rounded-b-[2rem] shadow-sm z-20 flex-shrink-0 relative">
-        <div class="text-center">
-          <h1 class="text-2xl font-bold text-slate-900 leading-tight">
-            I Miei Viaggi
-          </h1>
-          <p class="text-sm font-medium text-slate-700 opacity-80 mt-1">
-            Monitora le tue spese
-          </p>
+    <div id="app" class="flex flex-col flex-1 hidden">
+        
+        <div class="sticky top-0 z-40 bg-sky-300 shadow-md">
+            <header class="bg-sky-300 pt-8 pb-6 px-6 rounded-b-[2rem] shadow-sm z-20 flex-shrink-0 relative">
+                
+                <div class="text-center relative">
+                    <h1 class="text-2xl font-bold text-slate-900 leading-tight">
+                        I Miei Viaggi
+                    </h1>
+                    <p class="text-sm font-medium text-slate-700 opacity-80 mt-1">
+                        Monitora le tue spese
+                    </p>
+
+                    <button id="logout-btn" class="absolute right-0 top-1 p-2 text-slate-700 hover:text-red-600 transition-colors" title="Esci">
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-6 h-6">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M15.75 9V5.25A2.25 2.25 0 0013.5 3h-6a2.25 2.25 0 00-2.25 2.25v13.5A2.25 2.25 0 007.5 21h6a2.25 2.25 0 002.25-2.25V15m3 0l3-3m0 0l-3-3m3 3H9" />
+                        </svg>
+                    </button>
+                </div>
+            </header>
         </div>
-      </header>
+
+        <main class="flex-1 p-5 overflow-y-auto pb-24">
+            <div id="travels-list" class="flex flex-col gap-4">
+                <div class="animate-pulse flex flex-col gap-4">
+                    <div class="h-24 bg-gray-200 rounded-xl"></div>
+                    <div class="h-24 bg-gray-200 rounded-xl"></div>
+                </div>
+            </div>
+        </main>
+
+        <a href="/new-travel.html" class="fixed bottom-6 right-6 bg-sky-500 hover:bg-sky-600 hover:no-underline text-white w-14 h-14 rounded-full shadow-lg shadow-sky-300 flex items-center justify-center text-3xl font-bold transition transform active:scale-90 z-30">
+            +
+        </a>
     </div>
-
-    <main class="flex-1 p-5 overflow-y-auto pb-24">
-      <div id="travels-list" class="flex flex-col gap-4">
-        <div class="animate-pulse flex flex-col gap-4">
-            <div class="h-24 bg-gray-200 rounded-xl"></div>
-            <div class="h-24 bg-gray-200 rounded-xl"></div>
-        </div>
-      </div>
-    </main>
-
-   <a href="/new-travel.html" class="fixed bottom-6 right-6 bg-sky-500 hover:bg-sky-600 hover:no-underline text-white w-14 h-14 rounded-full shadow-lg shadow-sky-300 flex items-center justify-center text-3xl font-bold transition transform active:scale-90 z-30">
-      +
-    </a>
 
     <script type="module" src="/src/main.js"></script>
   </body>

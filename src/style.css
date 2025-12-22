@@ -1,3 +1,5 @@
+/* src/style.css */
+
 /* ===========================
    BASE / RESET
    =========================== */
@@ -26,6 +28,11 @@ body {
   min-height: 100vh;
   background: #f3f4f6;
   color: #111827;
+}
+
+/* UTILITY CLASSES PER LA LOGICA APP/LOGIN */
+.hidden {
+    display: none !important;
 }
 
 a {
@@ -62,6 +69,62 @@ button:focus-visible {
 }
 
 /* ===========================
+   AUTH / LOGIN SECTION (Nuova)
+   =========================== */
+
+/* Stili specifici per l'overlay di login se non gestiti da Tailwind */
+#login-view {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    background-color: #f3f4f6; /* Coerente col tuo tema */
+    z-index: 9999;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 1rem;
+}
+
+.login-card {
+    background: #ffffff;
+    padding: 2rem;
+    border-radius: 16px;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+    text-align: center;
+    max-width: 400px;
+    width: 100%;
+}
+
+.login-card h1 {
+    margin-top: 0;
+    margin-bottom: 0.5rem;
+    font-size: 1.5rem;
+    color: #0f172a;
+}
+
+.login-card p {
+    color: #6b7280;
+    margin-bottom: 2rem;
+}
+
+/* Logout button nell'header */
+#logout-btn {
+    background: transparent;
+    padding: 8px;
+    color: #475569;
+    box-shadow: none;
+}
+#logout-btn:hover {
+    background: rgba(255,255,255,0.3);
+    color: #dc2626; /* Rosso al passaggio */
+    box-shadow: none;
+}
+
+
+/* ===========================
    PAGINA LISTA VIAGGI (INDEX)
    =========================== */
 
@@ -82,6 +145,7 @@ button:focus-visible {
   align-items: center;
   justify-content: center;
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.08);
+  position: relative; /* Necessario per posizionare il logout assoluto */
 }
 
 .app-header-title {
@@ -108,6 +172,7 @@ button:focus-visible {
   margin-top: 32px;
   font-size: 0.9rem;
   color: #6b7280;
+  text-align: center;
 }
 
 /* bottone + flottante in basso (id="add-trip-btn") */
@@ -127,9 +192,11 @@ button:focus-visible {
   font-size: 26px;
   border: none;
   box-shadow: 0 4px 10px rgba(56, 189, 248, 0.7);
+  z-index: 50; /* Sopra le liste */
 }
 #add-trip-btn:hover {
   background: #0ea5e9;
+  text-decoration: none; /* Fix per tag <a> */
 }
 
 /* swipe per eliminare: wrapper creato da JS */
@@ -233,6 +300,12 @@ button:focus-visible {
   background: transparent;
   font-size: 20px;
   cursor: pointer;
+  padding: 0; /* Reset padding bottone */
+  box-shadow: none; /* Reset ombra bottone */
+}
+.exp-back-btn:hover {
+    background: transparent;
+    box-shadow: none;
 }
 
 .exp-header-center {

@@ -1,11 +1,17 @@
 import { API_BASE_URL } from "./config.js";
-import { initGoogleAuth } from "./auth.js";
+import { checkAuth, getAuthToken } from "./auth.js";
 
 
 document.addEventListener("DOMContentLoaded", () => {
 
-  initGoogleAuth();
+  // 1. Controllo Accesso
+  checkAuth();
 
+  // Se non c'è il token, ci fermiamo qui (l'UI di login è già visibile)
+  const token = getAuthToken();
+  if (!token) return;
+
+  console.log("App avviata con token valido.");
   const travelList = document.getElementById('travels-list');
   if (!travelList) {
     console.error("ERRORE: Elemento 'travels-list' non trovato.");
