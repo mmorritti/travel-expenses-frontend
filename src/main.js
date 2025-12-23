@@ -1,6 +1,6 @@
 import { API_BASE_URL } from "./config.js";
-import { checkAuth, getAuthToken } from "./auth.js";
-
+// MODIFICA 1: Importiamo fetchWithAuth
+import { checkAuth, getAuthToken, fetchWithAuth } from "./auth.js";
 
 document.addEventListener("DOMContentLoaded", () => {
 
@@ -14,7 +14,8 @@ document.addEventListener("DOMContentLoaded", () => {
   console.log("App avviata con token valido.");
   const travelList = document.getElementById('travels-list');
   if (!travelList) {
-    console.error("ERRORE: Elemento 'travels-list' non trovato.");
+    // Questo errore è normale se siamo in pagine diverse dalla home
+    // console.error("Elemento 'travels-list' non trovato.");
     return;
   }
 
@@ -22,7 +23,12 @@ document.addEventListener("DOMContentLoaded", () => {
 
   async function loadTravels() {
     try {
-      const response = await fetch(`${API_BASE_URL}/Travels/summaries`);
+      // MODIFICA 2: fetchWithAuth al posto di fetch
+      const response = await fetchWithAuth(`${API_BASE_URL}/Travels/summaries`);
+      
+      // Controllo aggiuntivo: se response è null significa che fetchWithAuth ha fallito (es. logout)
+      if (!response) return; 
+
       if (!response.ok) throw new Error(`Status: ${response.status}`);
 
       const rawData = await response.json();
@@ -43,7 +49,9 @@ document.addEventListener("DOMContentLoaded", () => {
         id: item.travelId || item.TravelId || item.id || item.Id,
         name: item.name || item.Name || "Senza Nome",
         startDate: item.startDate || item.StartDate,
-        endDate: item.endDate || item.EndDate
+        endDate: item.endDate || item.EndDate,
+        // Aggiungo anche valuta o budget se servissero in futuro
+        baseCurrency: item.baseCurrency || item.BaseCurrency
       }));
 
       travels.forEach(travel => {
@@ -75,7 +83,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
     // 3. Card
     const card = document.createElement('div');
-    card.className = "bg-white rounded-xl p-5 shadow-sm border border-gray-100 flex justify-between items-center relative z-10 bg-white cursor-pointer"; // Aggiunto cursor-pointer
+    card.className = "bg-white rounded-xl p-5 shadow-sm border border-gray-100 flex justify-between items-center relative z-10 bg-white cursor-pointer";
     
     let dateStr = "--";
     try {
@@ -103,10 +111,12 @@ document.addEventListener("DOMContentLoaded", () => {
     let isDragging = false;
     let isSwiped = false; 
 
-    // Funzioni helper per gestire sia Mouse che Touch
     const getX = (e) => e.type.includes('mouse') ? e.clientX : e.touches[0].clientX;
 
     const startDrag = (e) => {
+      // Ignora drag se non è il tasto sinistro del mouse
+      if(e.type === 'mousedown' && e.button !== 0) return;
+      
       startX = getX(e);
       isDragging = true;
       isSwiped = false;
@@ -119,13 +129,14 @@ document.addEventListener("DOMContentLoaded", () => {
       const x = getX(e);
       const diff = x - startX;
 
-      // Swipe solo verso destra
+      // Swipe solo verso destra (diff > 0)
       if (diff > 0) {
-        currentX = diff; // Salviamo la differenza
+        // Aggiungo resistenza visiva per non andare troppo oltre
+        currentX = diff; 
         card.style.transform = `translateX(${diff}px)`;
         
         if(diff > 20) deleteBg.classList.remove('opacity-0');
-        if (diff > 5) isSwiped = true; // Soglia minima per considerare movimento
+        if (diff > 5) isSwiped = true;
       }
     };
 
@@ -134,6 +145,7 @@ document.addEventListener("DOMContentLoaded", () => {
       isDragging = false;
       card.style.transition = 'transform 0.3s ease-out';
       
+      // Soglia di attivazione swipe
       if (currentX > 150) {
         // Conferma eliminazione
         card.style.transform = `translateX(120%)`; // Vai fuori schermo
@@ -153,12 +165,11 @@ document.addEventListener("DOMContentLoaded", () => {
 
     // Event Listeners (Mouse)
     card.addEventListener('mousedown', startDrag);
-    window.addEventListener('mousemove', moveDrag); // Window per non perdere il drag se esci dalla card
+    window.addEventListener('mousemove', moveDrag);
     window.addEventListener('mouseup', endDrag);
 
     // Click (Navigazione)
     card.addEventListener('click', (e) => {
-      // Se non stiamo trascinando e non abbiamo fatto uno swipe significativo
       if (!isSwiped) {
          window.location.href = `/travel-expenses.html?travelId=${travel.id}`;
       }
@@ -170,18 +181,20 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   async function performDelete(id, element) {
-    // Piccolo ritardo per far vedere l'animazione swipe completa
+    // Piccolo ritardo per far vedere l'animazione
     await new Promise(r => setTimeout(r, 100));
 
     if(!confirm("Vuoi davvero eliminare questo viaggio?")) {
-        loadTravels(); // Ricarica per resettare la posizione
+        loadTravels(); // Ricarica per resettare UI
         return;
     }
 
     try {
-      const res = await fetch(`${API_BASE_URL}/Travels/${id}`, { method: 'DELETE' });
-      if (res.ok) {
-        // Collasso animato
+      // MODIFICA 3: fetchWithAuth per DELETE
+      const res = await fetchWithAuth(`${API_BASE_URL}/Travels/${id}`, { method: 'DELETE' });
+      
+      if (res && res.ok) {
+        // Collasso animato UI
         element.style.height = `${element.offsetHeight}px`;
         element.style.transition = 'height 0.3s ease, margin 0.3s ease';
         requestAnimationFrame(() => {

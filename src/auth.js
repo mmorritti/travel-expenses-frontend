@@ -6,12 +6,26 @@ const EXPIRATION_MS = EXPIRATION_DAYS * 24 * 60 * 60 * 1000;
 
 export function checkAuth() {
     const tokenData = getStoredToken();
+    const isValid = tokenData && isTokenValid(tokenData);
 
-    if (tokenData && isTokenValid(tokenData)) {
+    // Elementi DOM chiave (potrebbero non esistere su tutte le pagine)
+    const loginView = document.getElementById("login-view");
+
+    if (isValid) {
+        // Utente loggato: mostra l'app
         showAppView();
     } else {
-        showLoginView();
-        initGoogleButton();
+        // Utente NON loggato
+        if (loginView) {
+            // Siamo sulla Home: mostriamo il login
+            showLoginView();
+            initGoogleButton();
+        } else {
+            // Siamo su una pagina interna (es. new-travel.html) ma senza token:
+            // Redirect forzato alla home per fare il login
+            console.warn("Utente non autenticato su pagina protetta. Redirect...");
+            window.location.href = "/index.html";
+        }
     }
 }
 
@@ -22,17 +36,24 @@ function handleCredentialResponse(response) {
         timestamp: new Date().getTime()
     };
     localStorage.setItem(TOKEN_KEY, JSON.stringify(dataToStore));
-    showAppView();
+    
+    console.log("Login effettuato. Ricarico la pagina...");
+    
+    // MODIFICA: Invece di chiamare solo showAppView(), ricarichiamo la pagina.
+    // Questo risolve i problemi di stato e gli errori COOP/COEP.
+    window.location.reload();
 }
 
 function initGoogleButton() {
+    // Se siamo su una pagina senza container per il bottone, usciamo
+    const btnContainer = document.getElementById("google-button-container");
+    if (!btnContainer) return;
+
     if (!window.google) {
-        // Riprova tra poco se lo script non è ancora carico
         setTimeout(initGoogleButton, 500); 
         return;
     }
     
-    // Evitiamo warning se già inizializzato
     try {
         window.google.accounts.id.initialize({
             client_id: GOOGLE_CLIENT_ID,
@@ -40,17 +61,24 @@ function initGoogleButton() {
         });
 
         window.google.accounts.id.renderButton(
-            document.getElementById("google-button-container"),
-            { theme: "outline", size: "large", width: "250" }
+            btnContainer,
+            { 
+                theme: "filled_blue", 
+                size: "large", 
+                shape: "pill",
+                text: "signin_with",
+                width: "280"
+            }
         );
     } catch (e) {
-        console.log("Google Auth Init:", e);
+        console.error("Google Auth Init Error:", e);
     }
 }
 
 export function logout() {
     localStorage.removeItem(TOKEN_KEY);
-    location.reload(); 
+    // Ricarica la pagina corrente o vai alla home
+    window.location.href = "/index.html"; 
 }
 
 function getStoredToken() {
@@ -64,18 +92,77 @@ function isTokenValid(tokenData) {
     return (new Date().getTime() - tokenData.timestamp) < EXPIRATION_MS;
 }
 
-// GESTIONE UI (Usa le classi 'hidden' di Tailwind)
+// --- GESTIONE UI SICURA (Non crasha se mancano gli ID) ---
+
 function showAppView() {
-    document.getElementById("login-view").classList.add("hidden");
-    document.getElementById("app").classList.remove("hidden");
-    
+    const loginView = document.getElementById("login-view");
+    const appView = document.getElementById("app");
     const logoutBtn = document.getElementById("logout-btn");
-    if(logoutBtn) logoutBtn.onclick = logout;
+    const userDisplay = document.getElementById("user-display");
+
+    // Nascondi Login se esiste
+    if (loginView) loginView.classList.add("hidden");
+    
+    // Mostra App se esiste
+    if (appView) appView.classList.remove("hidden");
+    
+    // Collega Logout se esiste
+    if (logoutBtn) logoutBtn.onclick = logout;
+
+    // (Opzionale) Mostra nome utente se hai salvato i dati del profilo
+    if (userDisplay) {
+        // Qui potresti decodificare il JWT per prendere il nome, 
+        // per ora lo rendiamo solo visibile se c'è logica extra
+        userDisplay.classList.remove("hidden");
+    }
 }
 
 function showLoginView() {
-    document.getElementById("app").classList.add("hidden");
-    document.getElementById("login-view").classList.remove("hidden");
+    const loginView = document.getElementById("login-view");
+    const appView = document.getElementById("app");
+    const userDisplay = document.getElementById("user-display");
+
+    if (appView) appView.classList.add("hidden");
+    if (userDisplay) userDisplay.classList.add("hidden");
+    if (loginView) loginView.classList.remove("hidden");
+}
+
+// --- FETCH WRAPPER ---
+
+export async function fetchWithAuth(url, options = {}) {
+    const token = getAuthToken();
+
+    // Se non ho il token, logout immediato
+    if (!token) {
+        console.warn("Token mancante. Logout forzato.");
+        logout();
+        return null;
+    }
+
+    const headers = {
+        ...options.headers,
+        "Authorization": `Bearer ${token}`
+    };
+
+    const newOptions = {
+        ...options,
+        headers
+    };
+
+    try {
+        const response = await fetch(url, newOptions);
+
+        if (response.status === 401) {
+            console.error("Sessione scaduta (401).");
+            logout();
+            return null;
+        }
+
+        return response;
+    } catch (error) {
+        console.error("Errore di rete fetchWithAuth:", error);
+        throw error;
+    }
 }
 
 export function getAuthToken() {

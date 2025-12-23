@@ -1,8 +1,15 @@
 import { API_BASE_URL } from "./config.js";
+// MODIFICA 1: Importa strumenti Auth
+import { checkAuth, fetchWithAuth } from "./auth.js";
 
 document.addEventListener("DOMContentLoaded", () => {
+  // MODIFICA 2: Verifica Auth all'avvio
+  checkAuth();
+
   const params = new URLSearchParams(window.location.search);
-  const travelId = params.get("travelId");
+  // Nota: nel tuo HTML o link precedenti usavi "id" o "travelId". 
+  // Qui uniformo controllando entrambi per sicurezza.
+  const travelId = params.get("travelId") || params.get("id");
 
   if (!travelId) {
     const content = document.getElementById("tab-content");
@@ -179,8 +186,11 @@ document.addEventListener("DOMContentLoaded", () => {
   // --- 4. CARICAMENTO DATI VIAGGIO ---
   async function loadTravelHeader() {
     try {
-      const res = await fetch(`${API_BASE_URL}/Travels/${travelId}`);
+      // MODIFICA 3: fetchWithAuth
+      const res = await fetchWithAuth(`${API_BASE_URL}/Travels/${travelId}`);
+      if (!res) return; // Auth fallita
       if (!res.ok) throw new Error("Errore caricamento viaggio");
+      
       const trip = await res.json();
 
       travelNameEl.textContent = trip.name;
@@ -216,10 +226,14 @@ document.addEventListener("DOMContentLoaded", () => {
     tabContentEl.innerHTML = `<div class="flex justify-center mt-10"><div class="animate-spin h-8 w-8 border-b-2 border-sky-500 rounded-full"></div></div>`;
     
     try {
+      // MODIFICA 4: fetchWithAuth su entrambe le chiamate parallele
       const [expRes, catRes] = await Promise.all([
-        fetch(`${API_BASE_URL}/Expanses?travelId=${travelId}`),
-        fetch(`${API_BASE_URL}/Categories`)
+        fetchWithAuth(`${API_BASE_URL}/Expanses?travelId=${travelId}`),
+        fetchWithAuth(`${API_BASE_URL}/Categories`)
       ]);
+      
+      if (!expRes || !catRes) return; // Auth check
+
       const expenses = await expRes.json();
       const categories = await catRes.json();
 
@@ -330,8 +344,9 @@ document.addEventListener("DOMContentLoaded", () => {
   async function deleteExpense(id) {
     if(!id) return;
     try {
-      const res = await fetch(`${API_BASE_URL}/Expanses/${id}`, { method: 'DELETE' });
-      if (res.ok) renderExpensesList();
+      // MODIFICA 5: fetchWithAuth
+      const res = await fetchWithAuth(`${API_BASE_URL}/Expanses/${id}`, { method: 'DELETE' });
+      if (res && res.ok) renderExpensesList();
       else alert("Errore eliminazione");
     } catch (err) { console.error(err); }
   }
@@ -351,10 +366,14 @@ document.addEventListener("DOMContentLoaded", () => {
     tabContentEl.innerHTML = `<div class="p-10 text-center animate-pulse">Caricamento modulo...</div>`;
     
     try {
+      // MODIFICA 6: fetchWithAuth
       const [catRes, travelRes] = await Promise.all([
-        fetch(`${API_BASE_URL}/Categories`),
-        fetch(`${API_BASE_URL}/Travels/${travelId}`)
+        fetchWithAuth(`${API_BASE_URL}/Categories`),
+        fetchWithAuth(`${API_BASE_URL}/Travels/${travelId}`)
       ]);
+
+      if (!catRes || !travelRes) return;
+
       const categories = await catRes.json();
       const travel = await travelRes.json();
 
@@ -441,14 +460,20 @@ document.addEventListener("DOMContentLoaded", () => {
         let method = "POST";
         if (editingExpenseId) { method = "PUT"; url += `/${editingExpenseId}`; payload.expanseId = editingExpenseId; }
 
-        const res = await fetch(url, { method, headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload) });
-        if (res.ok) {
+        // MODIFICA 7: fetchWithAuth per POST/PUT (Include automaticamente il token)
+        const res = await fetchWithAuth(url, { 
+            method, 
+            headers: { "Content-Type": "application/json" }, 
+            body: JSON.stringify(payload) 
+        });
+
+        if (res && res.ok) {
           editingExpenseId = null; 
           const listTab = document.querySelector('[data-tab="list"]');
           if (listTab) listTab.click();
         } else {
-            console.error(await res.text());
-            alert("Errore nel salvataggio");
+           if(res) console.error(await res.text());
+           alert("Errore nel salvataggio");
         }
       });
 
@@ -467,10 +492,14 @@ document.addEventListener("DOMContentLoaded", () => {
   async function renderChart() {
     tabContentEl.innerHTML = `<div class="flex justify-center mt-10"><div class="animate-spin h-8 w-8 border-b-2 border-sky-500 rounded-full"></div></div>`;
     try {
+      // MODIFICA 8: fetchWithAuth
       const [expRes, catRes] = await Promise.all([
-        fetch(`${API_BASE_URL}/Expanses?travelId=${travelId}`),
-        fetch(`${API_BASE_URL}/Categories`)
+        fetchWithAuth(`${API_BASE_URL}/Expanses?travelId=${travelId}`),
+        fetchWithAuth(`${API_BASE_URL}/Categories`)
       ]);
+      
+      if (!expRes || !catRes) return;
+
       const expenses = await expRes.json();
       const categories = await catRes.json();
 

@@ -2,7 +2,7 @@
 <html lang="it">
   <head>
     <meta charset="UTF-8" />
-    <title>I Miei Viaggi</title>
+    <title>Wander Wallet</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
     
     <script src="https://cdn.tailwindcss.com"></script>
@@ -10,14 +10,24 @@
     <link rel="stylesheet" href="/src/style.css" />
   </head>
 
-  <body class="bg-gray-50 min-h-screen flex flex-col font-sans">
+  <body class="bg-gray-50 min-h-screen flex flex-col font-sans text-slate-900">
 
-    <div id="login-view" class="fixed inset-0 z-50 bg-gray-50 flex flex-col items-center justify-center p-4">
-        <div class="bg-white p-8 rounded-2xl shadow-xl text-center max-w-sm w-full border border-gray-100">
-            <h1 class="text-2xl font-bold text-slate-900 mb-2">Benvenuto</h1>
-            <p class="text-slate-600 mb-8 text-sm">Accedi per monitorare le tue spese di viaggio</p>
+    <div id="login-view" class="fixed inset-0 z-50 flex flex-col items-center justify-center p-6 bg-gradient-to-b from-sky-100 to-slate-50">
+        
+        <div class="bg-white/80 backdrop-blur-sm p-8 rounded-3xl shadow-xl w-full max-w-sm flex flex-col items-center border border-white/50">
             
-            <div id="google-button-container" class="flex justify-center h-[44px]"></div>
+            <div class="w-20 h-20 bg-gradient-to-tr from-sky-400 to-sky-600 rounded-full flex items-center justify-center shadow-lg mb-6 text-white animate-bounce-slow">
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-10 h-10">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9a9 9 0 01-9-9m9 9c1.657 0 3-4.03 3-9s-1.343-9-3-9m0 18c-1.657 0-3-4.03-3-9s1.343-9 3-9m-9 9a9 9 0 019-9" />
+                </svg>
+            </div>
+
+            <h1 class="text-3xl font-extrabold text-slate-800 tracking-tight mb-2">Wander Wallet</h1>
+            <p class="text-slate-500 text-center mb-8 font-medium">Il compagno di viaggio per le tue spese.</p>
+            
+            <div id="google-button-container" class="flex justify-center w-full min-h-[50px]"></div>
+            
+            <p class="mt-8 text-xs text-slate-400">Effettuando l'accesso accetti i termini di servizio.</p>
         </div>
     </div>
 
@@ -27,11 +37,15 @@
             <header class="bg-sky-300 pt-8 pb-6 px-6 rounded-b-[2rem] shadow-sm z-20 flex-shrink-0 relative">
                 
                 <div class="text-center relative">
-                    <h1 class="text-2xl font-bold text-slate-900 leading-tight">
-                        I Miei Viaggi
-                    </h1>
-                    <p class="text-sm font-medium text-slate-700 opacity-80 mt-1">
-                        Monitora le tue spese
+                    <div class="flex items-center justify-center gap-2 mb-1">
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-6 h-6 text-slate-800">
+                             <path stroke-linecap="round" stroke-linejoin="round" d="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9a9 9 0 01-9-9m9 9c1.657 0 3-4.03 3-9s-1.343-9-3-9m0 18c-1.657 0-3-4.03-3-9s1.343-9 3-9m-9 9a9 9 0 019-9" />
+                        </svg>
+                        <h1 class="text-2xl font-bold text-slate-900 leading-tight">Wander Wallet</h1>
+                    </div>
+                    
+                    <p class="text-sm font-medium text-slate-700 opacity-80">
+                        I tuoi viaggi sotto controllo
                     </p>
 
                     <button id="logout-btn" class="absolute right-0 top-1 p-2 text-slate-700 hover:text-red-600 transition-colors" title="Esci">

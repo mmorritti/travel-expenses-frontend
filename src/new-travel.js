@@ -1,208 +1,225 @@
 import { API_BASE_URL } from "./config.js";
+import { checkAuth, fetchWithAuth } from "./auth.js";
 
-const API_URL = `${API_BASE_URL}/Travels`;
+// IMPORT FLATPICKR
+import flatpickr from "flatpickr";
+import "flatpickr/dist/flatpickr.min.css";
+import { Italian } from "flatpickr/dist/l10n/it.js";
 
+// Check Auth immediato
+checkAuth();
+
+console.log("Script new-travel.js caricato. API URL:", API_BASE_URL);
+
+// --- 1. DEFINIZIONE VALUTE ---
 const CURRENCIES = [
   { code: 'EUR', name: 'Euro', flag: '🇪🇺' },
   { code: 'GBP', name: 'Sterlina britannica', flag: '🇬🇧' },
   { code: 'CHF', name: 'Franco svizzero', flag: '🇨🇭' },
-  { code: 'USD', name: 'Dollaro statunitense', flag: '🇺🇸' },
+  { code: 'USD', name: 'Dollaro USA', flag: '🇺🇸' },
   { code: 'JPY', name: 'Yen giapponese', flag: '🇯🇵' },
   { code: 'MAD', name: 'Dirham Marocchino', flag: '🇲🇦' },
   { code: 'AUD', name: 'Dollaro australiano', flag: '🇦🇺' }
 ];
 
-document.addEventListener('DOMContentLoaded', () => {
-  const form = document.getElementById('travel-form');
-  const errorBox = document.getElementById('error-box');
-  const backBtn = document.getElementById('back-btn');
-  const cancelBtn = document.getElementById('cancel-btn');
+// --- 2. LOGICA CALENDARI ---
+// Eseguiamo immediatamente
+const startInput = document.getElementById("startDate");
+const endInput = document.getElementById("endDate");
 
-  const currencySearchInput = document.getElementById('travelCurrencySearch');
-  const currencyCodeInput = document.getElementById('travelCurrencyCode');
-  const currencyDropdown = document.getElementById('travelCurrencyDropdown');
-
-  // --- LOGICA CONTATORE CARATTERI (CORRETTA) ---
-  const nameInput = document.getElementById('name');
-  const countSpan = document.getElementById('char-count');
-
-  if (nameInput && countSpan) {
-      nameInput.addEventListener('input', () => {
-          const len = nameInput.value.length;
-          countSpan.textContent = `${len}/50`;
-
-          // Cambio colore se superi i 45 caratteri
-          if (len >= 45) {
-              countSpan.classList.remove('text-gray-400');
-              countSpan.classList.add('text-orange-500');
-          } else {
-              countSpan.classList.add('text-gray-400');
-              countSpan.classList.remove('text-orange-500');
-          }
-      });
-  } // <--- MANCAVA QUESTA GRAFFA DI CHIUSURA!
-
-  const goHome = () => window.location.href = '/index.html';
-  if(backBtn) backBtn.addEventListener('click', goHome);
-  if(cancelBtn) cancelBtn.addEventListener('click', goHome);
-
-  // === 📅 INIZIALIZZAZIONE CALENDARI (Corretta per non scrivere) ===
-  
-  // 1. Data Fine
-  const endDatePicker = flatpickr("#endDate", {
-    locale: "it",
-    dateFormat: "Y-m-d",   
-    altInput: true,        
-    altFormat: "j M Y",    
-    minDate: "today",
-    disableMobile: true,    // IMPORTANTE: Forza l'uso di flatpickr anche su mobile
-    allowInput: false,      // IMPORTANTE: Impedisce la scrittura manuale
-    clickOpens: true
-  });
-
-  // 2. Data Inizio
-  const startDatePicker = flatpickr("#startDate", {
-    locale: "it",
-    dateFormat: "Y-m-d",   
-    altInput: true,        
-    altFormat: "j M Y",    
-    minDate: "today",
-    disableMobile: true,    // IMPORTANTE
-    allowInput: false,      // IMPORTANTE
-    clickOpens: true,
-    onChange: function(selectedDates, dateStr, instance) {
-        endDatePicker.set('minDate', dateStr);
-        const endDateVal = endDatePicker.selectedDates[0];
-        if (endDateVal && endDateVal < selectedDates[0]) {
-            endDatePicker.clear();
-        }
-        setTimeout(() => endDatePicker.open(), 100); 
-    }
-  });
-
-
-  // === LIVE SEARCH VALUTA ===
-  currencySearchInput.addEventListener('focus', () => {
-    renderCurrencyList('');
-    showDropdown();
-  });
-
-  currencySearchInput.addEventListener('input', () => {
-    const term = currencySearchInput.value.trim();
-    renderCurrencyList(term);
-    showDropdown();
-    currencyCodeInput.value = '';
-  });
-
-  document.addEventListener('click', (event) => {
-    const isClickInside =
-      currencySearchInput.contains(event.target) ||
-      currencyDropdown.contains(event.target);
-
-    if (!isClickInside) {
-      hideDropdown();
-    }
-  });
-
-  function renderCurrencyList(filterText) {
-    const term = filterText.toLowerCase();
-    const filtered = CURRENCIES.filter((c) => {
-      if (!term) return true;
-      return (
-        c.code.toLowerCase().includes(term) ||
-        c.name.toLowerCase().includes(term)
-      );
-    });
-
-    if (filtered.length === 0) {
-      currencyDropdown.innerHTML = '<div class="px-3 py-2 text-sm text-gray-500">Nessun risultato</div>';
-      return;
-    }
-
-    currencyDropdown.innerHTML = '';
-    filtered.forEach((c) => {
-      const btn = document.createElement('button');
-      btn.type = 'button';
-      btn.className = 'w-full flex items-center justify-between px-3 py-2 text-sm hover:bg-sky-50 text-left';
-      btn.innerHTML = `
-        <div class="flex items-center gap-2">
-          <span class="text-lg">${c.flag}</span>
-          <span>${c.name}</span>
-        </div>
-        <span class="text-xs text-gray-500 font-mono font-bold">${c.code}</span>
-      `;
-      btn.addEventListener('click', () => {
-        currencySearchInput.value = `${c.flag} ${c.code} - ${c.name}`;
-        currencyCodeInput.value = c.code;
-        hideDropdown();
-      });
-      currencyDropdown.appendChild(btn);
-    });
-  }
-
-  function showDropdown() { currencyDropdown.classList.remove('hidden'); }
-  function hideDropdown() { currencyDropdown.classList.add('hidden'); }
-
-  // === SUBMIT ===
-  form.addEventListener('submit', async (event) => {
-    event.preventDefault();
-    hideError();
-
-    const name = document.getElementById('name').value.trim();
-    const startDate = document.getElementById('startDate').value;
-    const endDate = document.getElementById('endDate').value;
-    const homeCurrencyCode = 'EUR'; 
-    let travelCurrencyCode = currencyCodeInput.value;
-    
-    if (!travelCurrencyCode && currencySearchInput.value.length === 3) {
-        travelCurrencyCode = currencySearchInput.value.toUpperCase();
-    }
-
-    if (!name || !startDate || !endDate || !travelCurrencyCode) {
-      showError('Compila tutti i campi obbligatori.');
-      return;
-    }
-
-    const requestBody = {
-      name: name,
-      countryCode: "NA",
-      homeCurrencyCode: homeCurrencyCode,
-      travelCurrencyCode: travelCurrencyCode,
-      startDate: new Date(startDate).toISOString(), 
-      endDate: new Date(endDate).toISOString()
+if (startInput && endInput) {
+    const commonConfig = {
+        locale: Italian,
+        dateFormat: "Y-m-d",
+        altInput: true,
+        altFormat: "j M Y",
+        minDate: "today",
+        disableMobile: true,
+        allowInput: false
     };
 
-    try {
-      const response = await fetch(API_URL, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(requestBody)
-      });
+    const endDatePicker = flatpickr(endInput, commonConfig);
+    
+    flatpickr(startInput, {
+        ...commonConfig,
+        onChange: function(selectedDates, dateStr) {
+            // Aggiorna la data minima di fine quando cambi l'inizio
+            endDatePicker.set('minDate', dateStr);
+            setTimeout(() => endDatePicker.open(), 100);
+        }
+    });
+}
 
-      if (!response.ok) {
-        let message = 'Errore creazione viaggio.';
-        try {
-          const errorData = await response.json();
-          if (errorData.errors) message = Object.values(errorData.errors).flat().join(", ");
-          else if (errorData.title) message = errorData.title;
-        } catch {}
-        showError(message);
+// --- 3. LOGICA VALUTE (Dropdown) ---
+const currencySearchInput = document.getElementById('travelCurrencySearch');
+const currencyDropdown = document.getElementById('travelCurrencyDropdown');
+const currencyCodeInput = document.getElementById('travelCurrencyCode');
+
+function renderCurrencyList(term = '') {
+    if (!currencyDropdown) return;
+    
+    // Pulisce e prepara
+    currencyDropdown.innerHTML = '';
+    
+    const lowerTerm = term.toLowerCase();
+    const filtered = CURRENCIES.filter(c => 
+        c.code.toLowerCase().includes(lowerTerm) || 
+        c.name.toLowerCase().includes(lowerTerm)
+    );
+
+    if (filtered.length === 0) {
+        currencyDropdown.innerHTML = `<div class="p-3 text-sm text-gray-500">Nessuna valuta trovata</div>`;
         return;
-      }
-      window.location.href = '/index.html';
-    } catch (err) {
-      console.error(err);
-      showError('Errore di connessione.');
     }
-  });
 
-  function showError(message) {
-    errorBox.textContent = message;
-    errorBox.classList.remove('hidden');
-  }
+    filtered.forEach(c => {
+        const item = document.createElement('div');
+        item.className = "flex items-center justify-between p-3 hover:bg-sky-50 cursor-pointer border-b border-gray-50 last:border-0";
+        item.innerHTML = `
+            <div class="flex items-center gap-2">
+                <span class="text-xl">${c.flag}</span>
+                <span class="text-sm font-medium text-gray-700">${c.name}</span>
+            </div>
+            <span class="text-xs font-bold text-sky-600 bg-sky-100 px-2 py-1 rounded">${c.code}</span>
+        `;
+        
+        // Evento Mousedown (meglio di click per evitare conflitti col blur)
+        item.addEventListener('mousedown', (e) => {
+            e.preventDefault(); 
+            currencySearchInput.value = `${c.flag} ${c.code} - ${c.name}`;
+            currencyCodeInput.value = c.code; 
+            currencyDropdown.classList.add('hidden');
+        });
+        
+        currencyDropdown.appendChild(item);
+    });
 
-  function hideError() {
-    errorBox.textContent = '';
-    errorBox.classList.add('hidden');
-  }
-});
+    currencyDropdown.classList.remove('hidden');
+}
+
+// Event Listeners Valuta
+if (currencySearchInput) {
+    currencySearchInput.addEventListener('input', (e) => renderCurrencyList(e.target.value));
+    currencySearchInput.addEventListener('focus', () => renderCurrencyList(currencySearchInput.value));
+    
+    // Chiudi se clicchi fuori
+    document.addEventListener('click', (e) => {
+        if (!currencySearchInput.contains(e.target) && !currencyDropdown.contains(e.target)) {
+            currencyDropdown.classList.add('hidden');
+        }
+    });
+}
+
+// --- 4. LOGICA SUBMIT (CREAZIONE VIAGGIO) ---
+const form = document.getElementById('travel-form');
+const errorBox = document.getElementById('error-box');
+
+// Gestione pulsanti "Indietro" e "Annulla"
+const backBtn = document.getElementById('back-btn');
+const cancelBtn = document.getElementById('cancel-btn');
+const goHome = () => window.location.href = '/index.html';
+if(backBtn) backBtn.addEventListener('click', goHome);
+if(cancelBtn) cancelBtn.addEventListener('click', goHome);
+
+
+if (form) {
+    form.addEventListener('submit', async (event) => {
+        event.preventDefault(); // BLOCCA IL RICARICAMENTO
+        
+        console.log(">>> INVIO FORM...");
+        if(errorBox) errorBox.classList.add('hidden');
+
+        // 1. Recupera Dati
+        const nameInput = document.getElementById('name');
+        const name = nameInput ? nameInput.value.trim() : "";
+        
+        // I valori di data li prendiamo dagli input, flatpickr li aggiorna automaticamente
+        const startDate = startInput ? startInput.value : "";
+        const endDate = endInput ? endInput.value : "";
+
+        // Gestione valuta: usa il codice nascosto, oppure prova a indovinare dalla ricerca
+        let travelCode = currencyCodeInput ? currencyCodeInput.value : "";
+        if (!travelCode && currencySearchInput && currencySearchInput.value.length >= 3) {
+             travelCode = currencySearchInput.value.substring(0,3).toUpperCase();
+        }
+        // Fallback estremo
+        if (!travelCode) travelCode = 'EUR';
+
+        // 2. Validazione
+        if (!name || !startDate || !endDate) {
+            alert("Compila tutti i campi!");
+            return;
+        }
+
+        // 3. Preparazione Payload
+        const payload = {
+            name: name,
+            startDate: new Date(startDate).toISOString(),
+            endDate: new Date(endDate).toISOString(),
+            homeCurrencyCode: "EUR", // Hardcoded per ora
+            travelCurrencyCode: travelCode,
+            countryCode: "IT" 
+        };
+
+        console.log("Payload:", payload);
+
+        try {
+            // 4. Invio al Backend
+            const API_URL = `${API_BASE_URL}/Travels`;
+            
+            const response = await fetchWithAuth(API_URL, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            });
+
+            // Se l'auth fallisce, response è null
+            if (!response) {
+                console.error("Auth fallita.");
+                return; 
+            }
+
+            if (response.ok) {
+                // SUCCESSO
+                alert("Viaggio creato con successo!");
+                window.location.href = '/index.html';
+            } else {
+                // ERRORE DAL SERVER
+                const errorText = await response.text();
+                console.error("Errore Backend:", errorText);
+                
+                let message = `Errore: ${response.status}`;
+                try {
+                    // Proviamo a parsare l'errore JSON se c'è
+                    const jsonError = JSON.parse(errorText);
+                    if(jsonError.title) message = jsonError.title;
+                    if(jsonError.errors) message = JSON.stringify(jsonError.errors);
+                } catch(e) {}
+
+                if(errorBox) {
+                    errorBox.textContent = message;
+                    errorBox.classList.remove('hidden');
+                }
+                alert("Errore salvataggio: " + message);
+            }
+
+        } catch (err) {
+            console.error("Eccezione JS:", err);
+            alert("Errore di connessione: " + err.message);
+        }
+    });
+} else {
+    console.error("Form non trovato! Controlla l'ID 'travel-form'.");
+}
+
+// --- 5. CONTATORE CARATTERI ---
+const nameInput = document.getElementById('name');
+const charCount = document.getElementById('char-count');
+if(nameInput && charCount) {
+    nameInput.addEventListener('input', () => {
+        const len = nameInput.value.length;
+        charCount.textContent = `${len}/50`;
+        if(len >= 45) charCount.classList.add('text-orange-500');
+        else charCount.classList.remove('text-orange-500');
+    });
+}

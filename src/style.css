@@ -1,135 +1,45 @@
 /* src/style.css */
 
+/* 1. TAILWIND DIRECTIVES */
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* 2. CUSTOM ANIMATIONS & UTILITIES */
+
+/* Animazione per il logo nella Login */
+@keyframes bounce-slow {
+  0%, 100% { transform: translateY(-5%); animation-timing-function: cubic-bezier(0.8, 0, 1, 1); }
+  50% { transform: translateY(0); animation-timing-function: cubic-bezier(0, 0, 0.2, 1); }
+}
+.animate-bounce-slow {
+  animation: bounce-slow 3s infinite;
+}
+
+/* Classe essenziale per nascondere le viste (Login vs App) */
+.hidden {
+    display: none !important;
+}
+
+/* Smooth font rendering */
+body {
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
 /* ===========================
-   BASE / RESET
+   3. LEGACY / APP STYLES
+   (Stili usati dalla logica JS per le liste viaggi e spese)
    =========================== */
 
+/* RESET BASE */
 *,
 *::before,
 *::after {
   box-sizing: border-box;
 }
 
-:root {
-  font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI",
-    sans-serif;
-  line-height: 1.5;
-  font-weight: 400;
-  color: #111827;
-  background-color: #f3f4f6;
-  text-rendering: optimizeLegibility;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
-}
-
-body {
-  margin: 0;
-  min-width: 320px;
-  min-height: 100vh;
-  background: #f3f4f6;
-  color: #111827;
-}
-
-/* UTILITY CLASSES PER LA LOGICA APP/LOGIN */
-.hidden {
-    display: none !important;
-}
-
-a {
-  color: #0ea5e9;
-  text-decoration: none;
-}
-a:hover {
-  text-decoration: underline;
-}
-
-button {
-  border-radius: 9999px;
-  border: 1px solid transparent;
-  padding: 0.5em 1.1em;
-  font-size: 0.95rem;
-  font-weight: 500;
-  font-family: inherit;
-  background-color: #38bdf8;
-  color: #0f172a;
-  cursor: pointer;
-  transition: background-color 0.15s ease, box-shadow 0.15s ease,
-    transform 0.05s ease, border-color 0.15s ease;
-}
-button:hover {
-  background-color: #0ea5e9;
-  box-shadow: 0 2px 6px rgba(14, 165, 233, 0.45);
-}
-button:active {
-  transform: translateY(1px);
-}
-button:focus-visible {
-  outline: 2px solid #0ea5e9;
-  outline-offset: 2px;
-}
-
-/* ===========================
-   AUTH / LOGIN SECTION (Nuova)
-   =========================== */
-
-/* Stili specifici per l'overlay di login se non gestiti da Tailwind */
-#login-view {
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100vw;
-    height: 100vh;
-    background-color: #f3f4f6; /* Coerente col tuo tema */
-    z-index: 9999;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    padding: 1rem;
-}
-
-.login-card {
-    background: #ffffff;
-    padding: 2rem;
-    border-radius: 16px;
-    box-shadow: 0 4px 15px rgba(0,0,0,0.1);
-    text-align: center;
-    max-width: 400px;
-    width: 100%;
-}
-
-.login-card h1 {
-    margin-top: 0;
-    margin-bottom: 0.5rem;
-    font-size: 1.5rem;
-    color: #0f172a;
-}
-
-.login-card p {
-    color: #6b7280;
-    margin-bottom: 2rem;
-}
-
-/* Logout button nell'header */
-#logout-btn {
-    background: transparent;
-    padding: 8px;
-    color: #475569;
-    box-shadow: none;
-}
-#logout-btn:hover {
-    background: rgba(255,255,255,0.3);
-    color: #dc2626; /* Rosso al passaggio */
-    box-shadow: none;
-}
-
-
-/* ===========================
-   PAGINA LISTA VIAGGI (INDEX)
-   =========================== */
-
-/* il body della home può essere semplicemente <body> senza classe */
-
+/* STILI GENERICI APP (Se non coperti da Tailwind) */
 .app-container {
   min-height: 100vh;
   display: flex;
@@ -137,7 +47,7 @@ button:focus-visible {
   background: #f3f4f6;
 }
 
-/* barra azzurra "VIAGGI" */
+/* HEADER VIAGGI (Classes usate se il JS genera HTML senza Tailwind) */
 .app-header {
   background: #6bd0ff;
   height: 64px;
@@ -145,7 +55,7 @@ button:focus-visible {
   align-items: center;
   justify-content: center;
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.08);
-  position: relative; /* Necessario per posizionare il logout assoluto */
+  position: relative;
 }
 
 .app-header-title {
@@ -154,20 +64,17 @@ button:focus-visible {
   letter-spacing: 0.06em;
 }
 
-/* contenuto principale della pagina viaggi */
 .trips-main {
   flex: 1;
-  padding: 12px 0 80px; /* spazio per il + flottante */
+  padding: 12px 0 80px;
   background: #f3f4f6;
 }
 
-/* lista viaggi centrata su desktop */
 #trips-list {
   max-width: 960px;
   margin: 0 auto;
 }
 
-/* messaggio "nessun viaggio" */
 #empty-state {
   margin-top: 32px;
   font-size: 0.9rem;
@@ -175,7 +82,7 @@ button:focus-visible {
   text-align: center;
 }
 
-/* bottone + flottante in basso (id="add-trip-btn") */
+/* BOTTONE "+" (Fallback se JS non usa classi Tailwind) */
 #add-trip-btn {
   position: fixed;
   bottom: 24px;
@@ -192,14 +99,14 @@ button:focus-visible {
   font-size: 26px;
   border: none;
   box-shadow: 0 4px 10px rgba(56, 189, 248, 0.7);
-  z-index: 50; /* Sopra le liste */
+  z-index: 50;
+  text-decoration: none;
 }
 #add-trip-btn:hover {
   background: #0ea5e9;
-  text-decoration: none; /* Fix per tag <a> */
 }
 
-/* swipe per eliminare: wrapper creato da JS */
+/* SWIPE & CARDS */
 .trip-wrapper {
   position: relative;
   overflow: hidden;
@@ -207,7 +114,6 @@ button:focus-visible {
   padding: 0 16px;
 }
 
-/* sfondo rosso cancellazione */
 .trip-delete-bg {
   position: absolute;
   inset: 0;
@@ -223,7 +129,6 @@ button:focus-visible {
   font-weight: 600;
 }
 
-/* card viaggio (bianca) - si muove con lo swipe */
 .trip-card {
   position: relative;
   background: #ffffff;
@@ -271,8 +176,7 @@ button:focus-visible {
 }
 
 /* ===========================
-   PAGINA SPESE VIAGGIO
-   (body class="page-expenses")
+   PAGINA SPESE (Page Expenses)
    =========================== */
 
 .page-expenses {
@@ -280,7 +184,6 @@ button:focus-visible {
   color: #111827;
 }
 
-/* HEADER AZZURRO */
 .exp-header {
   position: sticky;
   top: 0;
@@ -300,12 +203,8 @@ button:focus-visible {
   background: transparent;
   font-size: 20px;
   cursor: pointer;
-  padding: 0; /* Reset padding bottone */
-  box-shadow: none; /* Reset ombra bottone */
-}
-.exp-back-btn:hover {
-    background: transparent;
-    box-shadow: none;
+  padding: 0;
+  box-shadow: none;
 }
 
 .exp-header-center {
@@ -326,23 +225,21 @@ button:focus-visible {
   color: #1f2937;
 }
 
-/* CONTENUTO CENTRALE */
 .exp-main {
   padding: 16px;
-  padding-bottom: 88px; /* spazio per le tab */
+  padding-bottom: 88px;
   box-sizing: border-box;
   max-width: 960px;
   margin: 0 auto;
 }
 
-/* testo di stato tipo "Nessuna spesa..." */
 .exp-main p {
   margin: 8px 0;
   font-size: 0.9rem;
   color: #4b5563;
 }
 
-/* CARD SPESA */
+/* CARD SPESA SINGOLA */
 .expense-card {
   background: #ffffff;
   border-radius: 12px;
@@ -381,7 +278,6 @@ button:focus-visible {
   text-align: right;
 }
 
-/* TOTALE IN FONDO ALLA LISTA */
 .expense-total-row {
   margin-top: 8px;
   padding-top: 8px;
@@ -392,10 +288,7 @@ button:focus-visible {
   font-size: 0.95rem;
 }
 
-/* ===========================
-   BOTTOM TABS (pagina spese)
-   =========================== */
-
+/* BOTTOM TABS */
 .exp-bottom-nav {
   position: fixed;
   left: 0;
@@ -435,10 +328,7 @@ button:focus-visible {
   box-shadow: 0 2px 6px rgba(37, 99, 235, 0.35);
 }
 
-/* ===========================
-   FORM "AGGIUNGI SPESA"
-   =========================== */
-
+/* FORM STYLES */
 #add-expense-form {
   display: flex;
   flex-direction: column;
@@ -473,7 +363,7 @@ button:focus-visible {
   color: #4b5563;
 }
 
-/* Animazione Slide In */
+/* UTILS PER ANIMAZIONI SLIDE */
 @keyframes slideInRight {
   from { opacity: 0; transform: translateX(20px); }
   to { opacity: 1; transform: translateX(0); }
@@ -492,12 +382,12 @@ button:focus-visible {
   animation: slideInLeft 0.2s ease-out forwards;
 }
 
-/* Rimuove le frecce (spinners) dagli input numerici */
+/* Rimozione spinner input numerici */
 input[type=number]::-webkit-inner-spin-button, 
 input[type=number]::-webkit-outer-spin-button { 
   -webkit-appearance: none; 
   margin: 0; 
 }
 input[type=number] {
-  -moz-appearance: textfield; /* Per Firefox */
+  -moz-appearance: textfield;
 }
